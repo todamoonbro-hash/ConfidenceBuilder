@@ -1,0 +1,708 @@
+{
+  "users": [
+    {
+      "id": "user_001",
+      "email": "demo@confidencebuilder.app",
+      "displayName": "Demo Speaker",
+      "createdAt": "2026-04-27T00:00:00.000Z"
+    }
+  ],
+  "goals": [
+    {
+      "id": "goal_001",
+      "userId": "user_001",
+      "focusArea": "executive_presence",
+      "targetLevel": 4,
+      "createdAt": "2026-04-27T00:00:00.000Z"
+    }
+  ],
+  "onboardingPreferences": [
+    {
+      "id": "pref_001",
+      "userId": "user_001",
+      "mainGoal": "confidence",
+      "confidenceLevel": 5,
+      "currentSpeakingLevel": "intermediate",
+      "readingDifficulty": "medium",
+      "preferredSessionLength": 20,
+      "upcomingEvent": "Quarterly business review in two weeks",
+      "preferredCoachStyle": "balanced",
+      "createdAt": "2026-04-27T00:00:00.000Z",
+      "updatedAt": "2026-04-27T00:00:00.000Z"
+    }
+  ],
+  "gameProgressions": [
+    {
+      "id": "gp_001",
+      "userId": "user_001",
+      "overallXp": 240,
+      "level": 3,
+      "streakDays": 2,
+      "lastActiveDate": "2026-04-26",
+      "currentDifficulty": "Moderate",
+      "skillXp": {
+        "confidence": 32,
+        "articulation": 28,
+        "reading": 25,
+        "impromptu": 24,
+        "listening": 18,
+        "executive": 22,
+        "media": 10,
+        "presentation": 20,
+        "storytelling": 12,
+        "persuasion": 16
+      },
+      "recentPerformanceScores": [
+        62,
+        70,
+        78
+      ]
+    }
+  ],
+  "trainingProfiles": [
+    {
+      "id": "profile_001",
+      "userId": "user_001",
+      "levelBand": "growth",
+      "weeklyFocus": "Confident openings and concise executive responses",
+      "recommendedModules": [
+        "articulation",
+        "read_aloud",
+        "impromptu"
+      ],
+      "dailyMinutes": 20,
+      "generatedFromPreferenceId": "pref_001",
+      "updatedAt": "2026-04-27T00:00:00.000Z"
+    }
+  ],
+  "trainingLevels": [
+    {
+      "id": "lvl_01",
+      "name": "Stabilise",
+      "order": 1,
+      "description": "Build baseline calm and consistent pacing."
+    },
+    {
+      "id": "lvl_02",
+      "name": "Basic Clarity",
+      "order": 2,
+      "description": "Improve sentence clarity and structure."
+    },
+    {
+      "id": "lvl_03",
+      "name": "Controlled Delivery",
+      "order": 3,
+      "description": "Reduce filler words and improve control."
+    },
+    {
+      "id": "lvl_04",
+      "name": "Strong Articulation",
+      "order": 4,
+      "description": "Strengthen diction and crisp enunciation."
+    }
+  ],
+  "trainingSessions": [
+    {
+      "id": "sess_001",
+      "userId": "user_001",
+      "dailyPlanId": "dp_2026_04_27",
+      "startedAt": "2026-04-27T00:00:00.000Z",
+      "status": "in_progress"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "ex_art_001",
+      "title": "Consonant Precision Ladder",
+      "drillType": "articulation",
+      "prompt": "Read: Crisp clarity creates confident communication.",
+      "difficulty": "beginner",
+      "tags": [
+        "articulation",
+        "warmup"
+      ]
+    },
+    {
+      "id": "ex_read_001",
+      "title": "Read-Aloud: Product Update",
+      "drillType": "read_aloud",
+      "prompt": "Today we shipped an important update focused on stability, speed, and user trust.",
+      "difficulty": "beginner",
+      "tags": [
+        "read-aloud",
+        "fluency"
+      ]
+    },
+    {
+      "id": "ex_imp_001",
+      "title": "Impromptu: 60-second Executive Brief",
+      "drillType": "impromptu",
+      "prompt": "Explain why your team\u2019s strategy should be approved this quarter.",
+      "difficulty": "intermediate",
+      "tags": [
+        "impromptu",
+        "executive"
+      ]
+    },
+    {
+      "id": "ex_spk_001",
+      "title": "Speaking Drill: Persuasive Opening",
+      "drillType": "public_speaking",
+      "prompt": "Deliver a 45-second opening for a project proposal.",
+      "difficulty": "intermediate",
+      "tags": [
+        "speaking",
+        "persuasion"
+      ]
+    },
+    {
+      "id": "ex_media_001",
+      "title": "Media Answer: Tough Question",
+      "drillType": "executive_communication",
+      "prompt": "Answer a tough media question in 30 seconds.",
+      "difficulty": "advanced",
+      "tags": [
+        "media",
+        "pressure"
+      ]
+    },
+    {
+      "id": "ex_boardroom_001",
+      "title": "Boardroom Update",
+      "drillType": "executive_communication",
+      "prompt": "Give a concise boardroom update with recommendation and risk.",
+      "difficulty": "advanced",
+      "tags": [
+        "boardroom",
+        "executive"
+      ]
+    }
+  ],
+  "attempts": [
+    {
+      "id": "att_001",
+      "sessionId": "sess_001",
+      "exerciseId": "ex_imp_001",
+      "createdAt": "2026-04-27T00:00:00.000Z",
+      "durationSeconds": 55
+    }
+  ],
+  "recordings": [],
+  "transcripts": [
+    {
+      "id": "tr_001",
+      "attemptId": "att_001",
+      "content": "I recommend we approve this strategy because it increases retention and lowers execution risk.",
+      "wordCount": 15
+    }
+  ],
+  "scores": [
+    {
+      "id": "score_001",
+      "attemptId": "att_001",
+      "confidence": 74,
+      "clarity": 76,
+      "articulation": 72,
+      "readingFluency": 70,
+      "concision": 68,
+      "executivePresence": 73,
+      "mediaControl": 67,
+      "listeningAccuracy": 69,
+      "persuasion": 71,
+      "storytelling": 66,
+      "listening": 69,
+      "impromptu": 75,
+      "presentation": 71,
+      "total": 72
+    }
+  ],
+  "dailyPlans": [
+    {
+      "id": "dp_2026_04_27",
+      "userId": "user_001",
+      "date": "2026-04-27",
+      "exerciseIds": [
+        "ex_art_001",
+        "ex_read_001",
+        "ex_imp_001"
+      ],
+      "focus": "clarity_and_confidence",
+      "status": "planned"
+    }
+  ],
+  "weeklyPlans": [
+    {
+      "id": "wp_2026_w18",
+      "userId": "user_001",
+      "weekStart": "2026-04-27",
+      "objective": "Reduce filler words and improve concise executive answers.",
+      "dailyPlanIds": [
+        "dp_2026_04_27"
+      ],
+      "status": "planned"
+    }
+  ],
+  "feedbackItems": [
+    {
+      "id": "fb_001",
+      "attemptId": "att_001",
+      "whatWorked": "Your opening recommendation was clear and direct.",
+      "whatWeakened": "Your middle section introduced two ideas without prioritization.",
+      "priorityFix": "Use a single 3-part structure: recommendation, reason, risk control.",
+      "retryInstruction": "Retry in 45 seconds using one clear recommendation and two supporting points max."
+    }
+  ],
+  "badges": [
+    {
+      "id": "badge_first_step",
+      "title": "First Step",
+      "description": "Complete your first training day.",
+      "requirement": "first_session"
+    },
+    {
+      "id": "badge_focus_streak",
+      "title": "Focus Streak",
+      "description": "Maintain a 3-day streak.",
+      "requirement": "streak_threshold",
+      "threshold": 3
+    },
+    {
+      "id": "badge_xp_500",
+      "title": "Momentum 500",
+      "description": "Reach 500 total XP.",
+      "requirement": "xp_threshold",
+      "threshold": 500
+    },
+    {
+      "id": "badge_stop_rambling",
+      "title": "Stop Rambling Complete",
+      "description": "Complete the Stop Rambling quest.",
+      "requirement": "quest_completion"
+    }
+  ],
+  "userBadges": [],
+  "quests": [
+    {
+      "id": "quest_stop_rambling",
+      "title": "Stop Rambling",
+      "description": "Quest path: Stop Rambling.",
+      "targetSkill": "confidence",
+      "minLevel": 1,
+      "completionXpReward": 120,
+      "completionBadgeId": "badge_stop_rambling",
+      "steps": [
+        {
+          "id": "quest_stop_rambling_s1",
+          "title": "Step 1",
+          "description": "Warmup rep for Stop Rambling.",
+          "exerciseId": "ex_read_001",
+          "targetSkill": "confidence",
+          "xpReward": 20,
+          "isBoss": false
+        },
+        {
+          "id": "quest_stop_rambling_s2",
+          "title": "Step 2",
+          "description": "Core drill for Stop Rambling.",
+          "exerciseId": "ex_art_001",
+          "targetSkill": "confidence",
+          "xpReward": 25,
+          "isBoss": false
+        },
+        {
+          "id": "quest_stop_rambling_s3",
+          "title": "Step 3",
+          "description": "Application drill for Stop Rambling.",
+          "exerciseId": "ex_imp_001",
+          "targetSkill": "confidence",
+          "xpReward": 30,
+          "isBoss": false
+        },
+        {
+          "id": "quest_stop_rambling_boss",
+          "title": "Boss Challenge",
+          "description": "Boss-style final challenge for Stop Rambling.",
+          "exerciseId": "ex_spk_001",
+          "targetSkill": "confidence",
+          "xpReward": 50,
+          "isBoss": true
+        }
+      ]
+    },
+    {
+      "id": "quest_read_like_a_pro",
+      "title": "Read Like a Pro",
+      "description": "Quest path: Read Like a Pro.",
+      "targetSkill": "reading",
+      "minLevel": 1,
+      "completionXpReward": 120,
+      "completionBadgeId": null,
+      "steps": [
+        {
+          "id": "quest_read_like_a_pro_s1",
+          "title": "Step 1",
+          "description": "Warmup rep for Read Like a Pro.",
+          "exerciseId": "ex_read_001",
+          "targetSkill": "reading",
+          "xpReward": 20,
+          "isBoss": false
+        },
+        {
+          "id": "quest_read_like_a_pro_s2",
+          "title": "Step 2",
+          "description": "Core drill for Read Like a Pro.",
+          "exerciseId": "ex_art_001",
+          "targetSkill": "reading",
+          "xpReward": 25,
+          "isBoss": false
+        },
+        {
+          "id": "quest_read_like_a_pro_s3",
+          "title": "Step 3",
+          "description": "Application drill for Read Like a Pro.",
+          "exerciseId": "ex_imp_001",
+          "targetSkill": "reading",
+          "xpReward": 30,
+          "isBoss": false
+        },
+        {
+          "id": "quest_read_like_a_pro_boss",
+          "title": "Boss Challenge",
+          "description": "Boss-style final challenge for Read Like a Pro.",
+          "exerciseId": "ex_spk_001",
+          "targetSkill": "reading",
+          "xpReward": 50,
+          "isBoss": true
+        }
+      ]
+    },
+    {
+      "id": "quest_articulation_reset",
+      "title": "Articulation Reset",
+      "description": "Quest path: Articulation Reset.",
+      "targetSkill": "articulation",
+      "minLevel": 1,
+      "completionXpReward": 120,
+      "completionBadgeId": null,
+      "steps": [
+        {
+          "id": "quest_articulation_reset_s1",
+          "title": "Step 1",
+          "description": "Warmup rep for Articulation Reset.",
+          "exerciseId": "ex_read_001",
+          "targetSkill": "articulation",
+          "xpReward": 20,
+          "isBoss": false
+        },
+        {
+          "id": "quest_articulation_reset_s2",
+          "title": "Step 2",
+          "description": "Core drill for Articulation Reset.",
+          "exerciseId": "ex_art_001",
+          "targetSkill": "articulation",
+          "xpReward": 25,
+          "isBoss": false
+        },
+        {
+          "id": "quest_articulation_reset_s3",
+          "title": "Step 3",
+          "description": "Application drill for Articulation Reset.",
+          "exerciseId": "ex_imp_001",
+          "targetSkill": "articulation",
+          "xpReward": 30,
+          "isBoss": false
+        },
+        {
+          "id": "quest_articulation_reset_boss",
+          "title": "Boss Challenge",
+          "description": "Boss-style final challenge for Articulation Reset.",
+          "exerciseId": "ex_spk_001",
+          "targetSkill": "articulation",
+          "xpReward": 50,
+          "isBoss": true
+        }
+      ]
+    },
+    {
+      "id": "quest_confidence_rebuild",
+      "title": "Confidence Rebuild",
+      "description": "Quest path: Confidence Rebuild.",
+      "targetSkill": "confidence",
+      "minLevel": 1,
+      "completionXpReward": 120,
+      "completionBadgeId": null,
+      "steps": [
+        {
+          "id": "quest_confidence_rebuild_s1",
+          "title": "Step 1",
+          "description": "Warmup rep for Confidence Rebuild.",
+          "exerciseId": "ex_read_001",
+          "targetSkill": "confidence",
+          "xpReward": 20,
+          "isBoss": false
+        },
+        {
+          "id": "quest_confidence_rebuild_s2",
+          "title": "Step 2",
+          "description": "Core drill for Confidence Rebuild.",
+          "exerciseId": "ex_art_001",
+          "targetSkill": "confidence",
+          "xpReward": 25,
+          "isBoss": false
+        },
+        {
+          "id": "quest_confidence_rebuild_s3",
+          "title": "Step 3",
+          "description": "Application drill for Confidence Rebuild.",
+          "exerciseId": "ex_imp_001",
+          "targetSkill": "confidence",
+          "xpReward": 30,
+          "isBoss": false
+        },
+        {
+          "id": "quest_confidence_rebuild_boss",
+          "title": "Boss Challenge",
+          "description": "Boss-style final challenge for Confidence Rebuild.",
+          "exerciseId": "ex_spk_001",
+          "targetSkill": "confidence",
+          "xpReward": 50,
+          "isBoss": true
+        }
+      ]
+    },
+    {
+      "id": "quest_media_ready_basics",
+      "title": "Media Ready Basics",
+      "description": "Quest path: Media Ready Basics.",
+      "targetSkill": "media",
+      "minLevel": 2,
+      "completionXpReward": 120,
+      "completionBadgeId": null,
+      "steps": [
+        {
+          "id": "quest_media_ready_basics_s1",
+          "title": "Step 1",
+          "description": "Warmup rep for Media Ready Basics.",
+          "exerciseId": "ex_read_001",
+          "targetSkill": "media",
+          "xpReward": 20,
+          "isBoss": false
+        },
+        {
+          "id": "quest_media_ready_basics_s2",
+          "title": "Step 2",
+          "description": "Core drill for Media Ready Basics.",
+          "exerciseId": "ex_art_001",
+          "targetSkill": "media",
+          "xpReward": 25,
+          "isBoss": false
+        },
+        {
+          "id": "quest_media_ready_basics_s3",
+          "title": "Step 3",
+          "description": "Application drill for Media Ready Basics.",
+          "exerciseId": "ex_imp_001",
+          "targetSkill": "media",
+          "xpReward": 30,
+          "isBoss": false
+        },
+        {
+          "id": "quest_media_ready_basics_boss",
+          "title": "Boss Challenge",
+          "description": "Boss-style final challenge for Media Ready Basics.",
+          "exerciseId": "ex_media_001",
+          "targetSkill": "media",
+          "xpReward": 50,
+          "isBoss": true
+        }
+      ]
+    },
+    {
+      "id": "quest_boardroom_basics",
+      "title": "Boardroom Basics",
+      "description": "Quest path: Boardroom Basics.",
+      "targetSkill": "executive",
+      "minLevel": 2,
+      "completionXpReward": 120,
+      "completionBadgeId": null,
+      "steps": [
+        {
+          "id": "quest_boardroom_basics_s1",
+          "title": "Step 1",
+          "description": "Warmup rep for Boardroom Basics.",
+          "exerciseId": "ex_read_001",
+          "targetSkill": "executive",
+          "xpReward": 20,
+          "isBoss": false
+        },
+        {
+          "id": "quest_boardroom_basics_s2",
+          "title": "Step 2",
+          "description": "Core drill for Boardroom Basics.",
+          "exerciseId": "ex_art_001",
+          "targetSkill": "executive",
+          "xpReward": 25,
+          "isBoss": false
+        },
+        {
+          "id": "quest_boardroom_basics_s3",
+          "title": "Step 3",
+          "description": "Application drill for Boardroom Basics.",
+          "exerciseId": "ex_imp_001",
+          "targetSkill": "executive",
+          "xpReward": 30,
+          "isBoss": false
+        },
+        {
+          "id": "quest_boardroom_basics_boss",
+          "title": "Boss Challenge",
+          "description": "Boss-style final challenge for Boardroom Basics.",
+          "exerciseId": "ex_boardroom_001",
+          "targetSkill": "executive",
+          "xpReward": 50,
+          "isBoss": true
+        }
+      ]
+    },
+    {
+      "id": "quest_impromptu_control",
+      "title": "Impromptu Control",
+      "description": "Quest path: Impromptu Control.",
+      "targetSkill": "impromptu",
+      "minLevel": 2,
+      "completionXpReward": 120,
+      "completionBadgeId": null,
+      "steps": [
+        {
+          "id": "quest_impromptu_control_s1",
+          "title": "Step 1",
+          "description": "Warmup rep for Impromptu Control.",
+          "exerciseId": "ex_read_001",
+          "targetSkill": "impromptu",
+          "xpReward": 20,
+          "isBoss": false
+        },
+        {
+          "id": "quest_impromptu_control_s2",
+          "title": "Step 2",
+          "description": "Core drill for Impromptu Control.",
+          "exerciseId": "ex_art_001",
+          "targetSkill": "impromptu",
+          "xpReward": 25,
+          "isBoss": false
+        },
+        {
+          "id": "quest_impromptu_control_s3",
+          "title": "Step 3",
+          "description": "Application drill for Impromptu Control.",
+          "exerciseId": "ex_imp_001",
+          "targetSkill": "impromptu",
+          "xpReward": 30,
+          "isBoss": false
+        },
+        {
+          "id": "quest_impromptu_control_boss",
+          "title": "Boss Challenge",
+          "description": "Boss-style final challenge for Impromptu Control.",
+          "exerciseId": "ex_spk_001",
+          "targetSkill": "impromptu",
+          "xpReward": 50,
+          "isBoss": true
+        }
+      ]
+    }
+  ],
+  "userQuestProgress": [
+    {
+      "id": "uqp_001",
+      "userId": "user_001",
+      "questId": "quest_stop_rambling",
+      "status": "active",
+      "currentStepIndex": 1,
+      "completedStepIds": [
+        "quest_stop_rambling_s1"
+      ],
+      "startedAt": "2026-04-27T00:00:00.000Z"
+    }
+  ],
+  "dailyMissions": [
+    {
+      "id": "mission_daily_reading",
+      "title": "Reading Warmup",
+      "description": "Complete one read-aloud drill with no long pauses.",
+      "targetSkill": "reading",
+      "xpReward": 30,
+      "skillXpReward": 20
+    },
+    {
+      "id": "mission_daily_confidence",
+      "title": "Confidence Rep",
+      "description": "Complete one 45-second speaking rep.",
+      "targetSkill": "confidence",
+      "xpReward": 35,
+      "skillXpReward": 20
+    }
+  ],
+  "userDailyMissionProgress": [
+    {
+      "id": "udm_001",
+      "userId": "user_001",
+      "missionId": "mission_daily_reading",
+      "completed": false
+    }
+  ],
+  "mediaKeyMessageSets": [],
+  "weeklyBossChallenges": [
+    {
+      "id": "boss_investor_qa",
+      "title": "Investor Update + Hostile Q&A",
+      "description": "Deliver investor update then respond to hostile questions.",
+      "scenarioSetup": "You have 2 minutes to present quarterly outlook, then answer 2 hard objections.",
+      "difficulty": "Pressure",
+      "requiredLevel": 2,
+      "timerSeconds": 300,
+      "rewardXp": 180
+    },
+    {
+      "id": "boss_media_followup",
+      "title": "Media Statement + Journalist Follow-up",
+      "description": "Issue statement and handle follow-up.",
+      "scenarioSetup": "Provide a public statement and answer a challenging follow-up question.",
+      "difficulty": "Challenging",
+      "requiredLevel": 2,
+      "timerSeconds": 240,
+      "rewardXp": 160
+    },
+    {
+      "id": "boss_boardroom_pressure",
+      "title": "Boardroom Update Under Pressure",
+      "description": "Concise boardroom briefing under pressure.",
+      "scenarioSetup": "Present recommendation, rationale, and risk in under 3 minutes.",
+      "difficulty": "Performance",
+      "requiredLevel": 3,
+      "timerSeconds": 300,
+      "rewardXp": 220
+    },
+    {
+      "id": "boss_cold_read_summary",
+      "title": "Cold Read + Executive Summary",
+      "description": "Cold read and summarize instantly.",
+      "scenarioSetup": "Read unfamiliar text and deliver an executive summary.",
+      "difficulty": "Challenging",
+      "requiredLevel": 2,
+      "timerSeconds": 240,
+      "rewardXp": 170
+    },
+    {
+      "id": "boss_presentation_opening",
+      "title": "5-Minute Presentation Opening + Q&A",
+      "description": "Strong opening plus rapid Q&A handling.",
+      "scenarioSetup": "Deliver opening, then answer one audience challenge.",
+      "difficulty": "Elite",
+      "requiredLevel": 4,
+      "timerSeconds": 360,
+      "rewardXp": 260
+    }
+  ],
+  "bossChallengeAttempts": []
+}
