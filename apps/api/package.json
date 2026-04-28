@@ -1,0 +1,39 @@
+{
+  "name": "@confidencebuilder/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "seed:verify": "node src/scripts/seed-verify.mjs",
+    "test:engine": "npm run build && node tests/engine.test.mjs",
+    "test:feedback": "npm run build && node tests/feedback-parser.test.mjs",
+    "test:articulation": "npm run build && node tests/articulation-heuristic.test.mjs",
+    "test:media": "npm run build && node tests/media-heuristic.test.mjs",
+    "test:soundbite": "npm run build && node tests/soundbite-messaging.test.mjs",
+    "test:crisis": "npm run build && node tests/crisis-simulator.test.mjs",
+    "test:reading": "npm run build && node tests/reading-aloud-lab.test.mjs",
+    "test:impromptu": "npm run build && node tests/impromptu-speaking-lab.test.mjs",
+    "test:listening": "npm run build && node tests/listening-response-lab.test.mjs",
+    "test:executive": "npm run build && node tests/executive-simulations.test.mjs",
+    "test:realtime": "npm run build && node tests/realtime-voice-coach.test.mjs",
+    "test:dashboard": "npm run build && node tests/dashboard-insights.test.mjs",
+    "test:stage": "npm run build && node tests/stage-progression.test.mjs",
+    "test:sales": "npm run build && node tests/sales-influence.test.mjs",
+    "test:interview": "npm run build && node tests/interview-prep.test.mjs",
+    "test:executive-presence": "npm run build && node tests/executive-presence.test.mjs",
+    "test:difficult": "npm run build && node tests/difficult-conversations.test.mjs",
+    "test:networking": "npm run build && node tests/networking.test.mjs",
+    "test:coach": "npm run build && node tests/coach-overview.test.mjs",
+    "test:scenario-studio": "npm run build && node tests/scenario-studio.test.mjs"
+  },
+  "dependencies": {
+    "fastify": "5.2.1"
+  },
+  "devDependencies": {
+    "tsx": "4.19.3",
+    "typescript": "5.8.3"
+  }
+}
