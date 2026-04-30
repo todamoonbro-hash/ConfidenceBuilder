@@ -51,19 +51,30 @@ export default async function ModulesPage() {
 
   return (
     <>
-      <PageHeader title="Modules" subtitle="Choose one focused lab to build a specific speaking capability." kicker="Practice labs" />
+      <PageHeader 
+        kicker="Training labs"
+        title="Practice modules" 
+        subtitle="Pick one focused lab to build a specific speaking capability. Start with foundations, progress to advanced scenarios." 
+      />
 
-      <section className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
-        <p className="font-medium text-slate-900">Recommended sequence</p>
-        <p className="mt-1">Start with articulation or reading, run one timed speaking lab, then finish with media or executive pressure practice.</p>
+      {/* Lab sequence guide */}
+      <section className="mb-6 rounded-2xl border border-slate-200 bg-gradient-to-br from-blue-50 to-white p-5 shadow-sm">
+        <h2 className="text-sm font-semibold text-slate-900">Suggested sequence</h2>
+        <div className="mt-3 grid gap-2 text-sm text-slate-600 md:grid-cols-3">
+          <p><span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white mr-2">1</span>Articulation or Reading</p>
+          <p><span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white mr-2">2</span>Impromptu or Listening</p>
+          <p><span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white mr-2">3</span>Media or Executive Pressure</p>
+        </div>
       </section>
 
-      <ArticulationStudio drills={drills} />
-      <ReadingAloudLab passages={readingPassages} />
-      <ImpromptuSpeakingLab />
-      <ListeningResponseLab />
-      <ExecutiveSimulationsLab />
-      <MediaTrainingStudio drills={mediaDrills} />
+      <div className="space-y-6">
+        <ArticulationStudio drills={drills} />
+        <ReadingAloudLab passages={readingPassages} />
+        <ImpromptuSpeakingLab />
+        <ListeningResponseLab />
+        <ExecutiveSimulationsLab />
+        <MediaTrainingStudio drills={mediaDrills} />
+      </div>
     </>
   );
 }

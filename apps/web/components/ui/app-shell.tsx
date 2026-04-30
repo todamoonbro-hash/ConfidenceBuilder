@@ -1,38 +1,55 @@
 import { NavLink } from "./nav-link";
 
 export interface AppShellProps {
-  children?: unknown;
+  children?: any;
 }
 
 export function AppShell({ children }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900">
-      <div className="mx-auto w-full max-w-6xl px-3 py-3 md:px-6 md:py-5">
-        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 shadow-sm">
-          <header className="border-b border-slate-200 bg-white px-4 py-4 md:px-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">ConfidenceBuilder</p>
-                <p className="text-lg font-semibold text-slate-900">Executive Speaking Academy</p>
-                <p className="text-xs text-slate-500">Calm repetition. Clear thinking. High-stakes delivery.</p>
-              </div>
-              <nav className="flex flex-wrap gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="mx-auto w-full max-w-7xl px-3 py-4 md:px-6 md:py-6">
+        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          {/* Header */}
+          <header className="border-b border-slate-200 bg-gradient-to-r from-white to-slate-50 px-4 py-5 md:px-6">
+            <div className="mb-4">
+              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">ConfidenceBuilder</p>
+              <h1 className="text-xl md:text-2xl font-semibold text-slate-900 mt-1">Executive Speaking Academy</h1>
+              <p className="text-xs md:text-sm text-slate-600 mt-1">Calm repetition · Clear thinking · High-stakes delivery</p>
+            </div>
+            
+            {/* Navigation - Organized by sections */}
+            <nav className="flex flex-col gap-3 text-sm">
+              {/* Primary actions */}
+              <div className="flex flex-wrap gap-1">
                 <NavLink href="/" label="Home" />
-                <NavLink href="/dashboard" label="Dashboard" />
-                <NavLink href="/coach" label="Coach" badge="New" />
-                <NavLink href="/session" label="Session" badge="Daily" />
-                <NavLink href="/modules" label="Modules" />
-                <NavLink href="/sales-influence" label="Sales & Influence" badge="New" />
-                <NavLink href="/interview-prep" label="Interview Prep" badge="New" />
-                <NavLink href="/executive-presence" label="Executive Presence" badge="New" />
-                <NavLink href="/difficult-conversations" label="Difficult Conversations" badge="New" />
+                <NavLink href="/session" label="Today's Session" badge="Daily" />
+                <NavLink href="/dashboard" label="Progress" />
+                <NavLink href="/coach" label="Coach" badge="AI" />
+              </div>
+              
+              {/* Training modules */}
+              <div className="flex flex-wrap gap-1">
+                <span className="px-2 py-1 text-xs text-slate-500 font-semibold">TRAINING:</span>
+                <NavLink href="/modules" label="Labs" />
+                <NavLink href="/modules" label="Articulation" />
+                <NavLink href="/interview-prep" label="Interviews" badge="New" />
+                <NavLink href="/executive-presence" label="Executive" badge="New" />
+                <NavLink href="/sales-influence" label="Sales" badge="New" />
+                <NavLink href="/difficult-conversations" label="Difficult Talk" badge="New" />
                 <NavLink href="/networking" label="Networking" badge="New" />
+              </div>
+              
+              {/* Game & progress */}
+              <div className="flex flex-wrap gap-1">
+                <span className="px-2 py-1 text-xs text-slate-500 font-semibold">PROGRESS:</span>
                 <NavLink href="/quests" label="Quests" />
                 <NavLink href="/history" label="History" />
                 <NavLink href="/settings" label="Settings" />
-              </nav>
-            </div>
+              </div>
+            </nav>
           </header>
+          
+          {/* Main content */}
           <main className="p-4 md:p-6">{children}</main>
         </div>
       </div>

@@ -1,9 +1,10 @@
+
 import "./globals.css";
 
 import { AppShell } from "../components/ui/app-shell";
 
 export interface RootLayoutProps {
-  children: unknown;
+  children: any;
 }
 
 export default function RootLayout({ children }: RootLayoutProps) {

@@ -16,21 +16,37 @@ AI Speaker Confidence Coach monorepo scaffold.
 - `packages/config`: shared environment helpers
 
 ## Quick start
-1. Install dependencies (npm or pnpm).
+1. Install dependencies:
+   - `npm install`
 2. Copy environment template:
-   - `cp .env.example .env.local`
+   - `cp .env.example .env.local` (or copy manually on Windows)
 3. Fill in required values in `.env.local` (do not commit secrets).
-4. Run `npm run dev`.
+4. Start dev services:
+   - `npm run dev`
+
+## Production build and run
+From repo root:
+
+- Build all workspaces: `npm run build`
+- Type-check: `npm run typecheck`
+
+Run production services:
+
+- API: `npm run start -w @confidencebuilder/api`
+- Web: `npm run start -w @confidencebuilder/web`
 
 ## Environment variables
 The repository includes `.env.example` with placeholders for:
-- OpenAI API key
-- OpenAI transcription model
-- OpenAI feedback model
-- Database URL
-- Auth secret
-- Storage provider credentials
-- App/API base URLs
+- OpenAI API key and model settings (`OPENAI_API_KEY`, `OPENAI_TRANSCRIPTION_MODEL`, `OPENAI_FEEDBACK_MODEL`, `OPENAI_REALTIME_MODEL`)
+- Runtime settings (`NODE_ENV`, `API_PORT`)
+- Database URL (`DATABASE_URL`)
+- Auth secret (`AUTH_SECRET`)
+- Storage provider credentials (`STORAGE_*`)
+- App/API base URLs (`APP_BASE_URL`, `API_BASE_URL`)
+
+OpenAI and other secrets are intended for **server-side runtime only**.
+
+For full deployment setup (Vercel + API host, migration notes, and checklist), see `DEPLOYMENT.md`.
 
 ## Phase 6 transcription integration notes
 - Recording still happens in the browser with `MediaRecorder`.

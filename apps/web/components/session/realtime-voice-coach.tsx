@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 type CoachMode = "interview_simulation" | "confidence_check_in" | "quick_speaking_warmup" | "media_practice" | "impromptu_speaking";
 
@@ -12,11 +12,11 @@ export function RealtimeVoiceCoach({ userId = "user_001" }: { userId?: string })
   const [summary, setSummary] = useState<{ whatWorked: string; priorityFix: string; nextDrill: string } | undefined>();
   const [error, setError] = useState<string | undefined>();
   const [isListening, setIsListening] = useState(false);
+  const [supportsBrowserSpeech, setSupportsBrowserSpeech] = useState(false);
 
-  const supportsBrowserSpeech = useMemo(
-    () => typeof window !== "undefined" && Boolean((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition),
-    []
-  );
+  useEffect(() => {
+    setSupportsBrowserSpeech(Boolean((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition));
+  }, []);
 
   const speak = (text: string) => {
     if (typeof window === "undefined" || !window.speechSynthesis) {

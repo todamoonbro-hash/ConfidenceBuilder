@@ -6,72 +6,102 @@ export default function OnboardingPage() {
   return (
     <>
       <PageHeader
-        title="Onboarding"
-        subtitle="Build a professional training baseline so coaching stays specific to your role, pressure points, and speaking goals."
         kicker="Setup"
+        title="Your speaking profile"
+        subtitle="Help us tailor coaching to your role and goals. This baseline ensures recommendations stay specific and valuable."
       />
 
-      <form action="/onboarding/submit" method="post" className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 md:grid-cols-2">
+      <form action="/onboarding/submit" method="post" className="max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <input type="hidden" name="userId" value="user_001" />
 
-        <label className="grid gap-1 text-sm">
-          Primary objective
-          <select name="mainGoal" defaultValue="executive_presence" className="rounded-md border border-slate-300 px-3 py-2">
-            {GOAL_OPTIONS.map((goal) => (
-              <option key={goal} value={goal}>{goal.replace("_", " ")}</option>
-            ))}
-          </select>
-        </label>
+        <div className="grid gap-5">
+          {/* Primary role and goal */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="grid gap-2">
+              <span className="text-sm font-semibold text-slate-900">What's your primary speaking goal?</span>
+              <select name="mainGoal" defaultValue="executive_presence" className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10">
+                {GOAL_OPTIONS.map((goal) => (
+                  <option key={goal} value={goal}>{goal.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}</option>
+                ))}
+              </select>
+            </label>
 
-        <label className="grid gap-1 text-sm">
-          Current confidence (1-10)
-          <input name="confidenceLevel" type="number" min={1} max={10} defaultValue={5} className="rounded-md border border-slate-300 px-3 py-2" />
-        </label>
+            <label className="grid gap-2">
+              <span className="text-sm font-semibold text-slate-900">Current confidence (1–10)</span>
+              <input name="confidenceLevel" type="number" min={1} max={10} defaultValue={5} className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10" />
+            </label>
+          </div>
 
-        <label className="grid gap-1 text-sm">
-          Speaking level
-          <select name="currentSpeakingLevel" defaultValue="intermediate" className="rounded-md border border-slate-300 px-3 py-2">
-            <option value="beginner">Beginner</option>
-            <option value="intermediate">Intermediate</option>
-            <option value="advanced">Advanced</option>
-          </select>
-        </label>
+          {/* Experience level */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="grid gap-2">
+              <span className="text-sm font-semibold text-slate-900">Speaking experience</span>
+              <select name="currentSpeakingLevel" defaultValue="intermediate" className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10">
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced</option>
+              </select>
+            </label>
 
-        <label className="grid gap-1 text-sm">
-          Preferred daily session length
-          <select name="preferredSessionLength" defaultValue={20} className="rounded-md border border-slate-300 px-3 py-2">
-            <option value={10}>10 minutes</option>
-            <option value={15}>15 minutes</option>
-            <option value={20}>20 minutes</option>
-            <option value={30}>30 minutes</option>
-          </select>
-        </label>
+            <label className="grid gap-2">
+              <span className="text-sm font-semibold text-slate-900">Daily session length</span>
+              <select name="preferredSessionLength" defaultValue={20} className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10">
+                <option value={10}>10 minutes</option>
+                <option value={15}>15 minutes</option>
+                <option value={20}>20 minutes</option>
+                <option value={30}>30 minutes</option>
+              </select>
+            </label>
+          </div>
 
-        <label className="grid gap-1 text-sm md:col-span-2">
-          Upcoming high-stakes speaking event (optional)
-          <input name="upcomingEvent" type="text" placeholder="E.g. Board update on June 14" className="rounded-md border border-slate-300 px-3 py-2" />
-        </label>
+          {/* Upcoming event */}
+          <label className="grid gap-2">
+            <span className="text-sm font-semibold text-slate-900">Upcoming speaking event (optional)</span>
+            <input name="upcomingEvent" type="text" placeholder="E.g., Board presentation on June 14" className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10" />
+            <p className="text-xs text-slate-600">This helps us prioritize the most relevant drills.</p>
+          </label>
 
-        <label className="grid gap-1 text-sm">
-          Coach style
-          <select name="preferredCoachStyle" defaultValue="balanced" className="rounded-md border border-slate-300 px-3 py-2">
-            <option value="direct">Direct</option>
-            <option value="supportive">Supportive</option>
-            <option value="balanced">Balanced</option>
-          </select>
-        </label>
+          {/* Coach preferences */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="grid gap-2">
+              <span className="text-sm font-semibold text-slate-900">Coach style</span>
+              <select name="preferredCoachStyle" defaultValue="balanced" className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10">
+                <option value="direct">Direct and honest</option>
+                <option value="supportive">Supportive and encouraging</option>
+                <option value="balanced">Balanced approach</option>
+              </select>
+            </label>
 
-        <label className="grid gap-1 text-sm">
-          Reading drill difficulty
-          <select name="readingDifficulty" defaultValue="medium" className="rounded-md border border-slate-300 px-3 py-2">
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-          </select>
-        </label>
+            <label className="grid gap-2">
+              <span className="text-sm font-semibold text-slate-900">Reading drill difficulty</span>
+              <select name="readingDifficulty" defaultValue="medium" className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10">
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Challenging</option>
+              </select>
+            </label>
+          </div>
+        </div>
 
-        <button type="submit" className="md:col-span-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Save profile and continue</button>
+        <div className="mt-6 flex gap-3">
+          <button 
+            type="submit" 
+            className="flex-1 rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 active:bg-slate-950 transition-colors"
+          >
+            Save profile and start
+          </button>
+          <a 
+            href="/" 
+            className="px-5 py-3 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors text-center"
+          >
+            Skip for now
+          </a>
+        </div>
       </form>
+
+      <div className="mt-6 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-5">
+        <p className="text-sm text-slate-700"><span className="font-semibold text-slate-900">Why we ask:</span> This profile helps our AI coach personalize recommendations. You can update it anytime in settings.</p>
+      </div>
     </>
   );
 }
