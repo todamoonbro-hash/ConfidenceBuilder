@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { DEFAULT_USER_ID } from "../../lib/user";
 
 export function ExecutivePresenceStudio({ library }: { library: any }) {
   const scenarios = library?.scenarios ?? [];
@@ -61,7 +62,7 @@ export function ExecutivePresenceStudio({ library }: { library: any }) {
 
         <div className="mt-3 flex flex-wrap gap-2">
           <button type="button" className="rounded-md bg-slate-900 px-3 py-2 text-sm text-white" onClick={async () => {
-            const response = await fetch("/executive-presence/session/start", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId: "user_001", scenarioId, framework, pressureMode, timeLimitSeconds }) });
+            const response = await fetch("/executive-presence/session/start", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId: DEFAULT_USER_ID, scenarioId, framework, pressureMode, timeLimitSeconds }) });
             const result = await response.json();
             if (result.ok) {
               setSessionId(result.session.id);
@@ -80,7 +81,7 @@ export function ExecutivePresenceStudio({ library }: { library: any }) {
           }}>Submit answer</button>
           <button type="button" className="rounded-md bg-emerald-700 px-3 py-2 text-sm text-white" onClick={async () => {
             if (!sessionId) return;
-            const response = await fetch("/executive-presence/session/end", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId, userId: "user_001" }) });
+            const response = await fetch("/executive-presence/session/end", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId, userId: DEFAULT_USER_ID }) });
             const result = await response.json();
             if (result.ok) {
               setReport(result.report);

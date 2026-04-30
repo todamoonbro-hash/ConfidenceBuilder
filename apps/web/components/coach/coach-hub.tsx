@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export function CoachHub({ initialData }: { initialData: any }) {
+export function CoachHub({ initialData, userId }: { initialData: any; userId: string }) {
   const [data, setData] = useState<any>(initialData);
 
   const coach = data?.coach;
@@ -22,7 +22,7 @@ export function CoachHub({ initialData }: { initialData: any }) {
             type="button"
             className="rounded-md border border-slate-300 px-3 py-2 text-sm"
             onClick={async () => {
-              const response = await fetch("/coach/overview?userId=user_001", { cache: "no-store" });
+              const response = await fetch(`/coach/overview?userId=${encodeURIComponent(userId)}`, { cache: "no-store" });
               const payload = await response.json();
               setData(payload);
             }}

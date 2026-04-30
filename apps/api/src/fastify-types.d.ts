@@ -2,11 +2,16 @@ declare module "fastify" {
   interface FastifyRequest {
     body?: unknown;
     params?: Record<string, string>;
+    query?: Record<string, string | undefined>;
+  }
+
+  interface FastifyReply {
+    code: (statusCode: number) => FastifyReply;
   }
 
   interface FastifyInstance {
-    get: (path: string, handler: (request: FastifyRequest) => Promise<unknown> | unknown) => void;
-    post: (path: string, handler: (request: FastifyRequest) => Promise<unknown> | unknown) => void;
+    get: (path: string, handler: (request: FastifyRequest, reply: FastifyReply) => Promise<unknown> | unknown) => void;
+    post: (path: string, handler: (request: FastifyRequest, reply: FastifyReply) => Promise<unknown> | unknown) => void;
     listen: (options: { host: string; port: number }) => Promise<void>;
   }
 

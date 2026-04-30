@@ -336,8 +336,8 @@ export interface BossChallengeAttempt {
   attemptId: string;
   startedAt: string;
   completedAt?: string;
-  transcriptPlaceholder: string;
-  scoringPlaceholder: string;
+  transcript: string;
+  scoringNote: string;
   outcome: "in_progress" | "pass" | "fail" | "complete" | "improve";
   xpGranted: number;
 }

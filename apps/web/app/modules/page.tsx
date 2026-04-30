@@ -51,29 +51,32 @@ export default async function ModulesPage() {
 
   return (
     <>
-      <PageHeader 
-        kicker="Training labs"
-        title="Practice modules" 
-        subtitle="Pick one focused lab to build a specific speaking capability. Start with foundations, progress to advanced scenarios." 
+      <PageHeader
+        kicker="Skill labs"
+        title="All training modules"
+        subtitle="Foundations first (Articulation, Reading), then pressure (Impromptu, Listening), then presence (Executive, Media)."
+        action={{ label: "← Back to Practice", href: "/practice" }}
       />
 
-      {/* Lab sequence guide */}
-      <section className="mb-6 rounded-lg border border-slate-200 p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-slate-900">Suggested sequence</h2>
-        <div className="mt-3 grid gap-2 text-sm text-slate-600 md:grid-cols-3">
-          <p><span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white mr-2">1</span>Articulation or Reading</p>
-          <p><span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white mr-2">2</span>Impromptu or Listening</p>
-          <p><span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white mr-2">3</span>Media or Executive Pressure</p>
-        </div>
-      </section>
-
       <div className="space-y-6">
-        <ArticulationStudio drills={drills} />
-        <ReadingAloudLab passages={readingPassages} />
-        <ImpromptuSpeakingLab />
-        <ListeningResponseLab />
-        <ExecutiveSimulationsLab />
-        <MediaTrainingStudio drills={mediaDrills} />
+        <div id="articulation" className="scroll-mt-24">
+          <ArticulationStudio drills={drills} />
+        </div>
+        <div id="reading" className="scroll-mt-24">
+          <ReadingAloudLab passages={readingPassages} />
+        </div>
+        <div id="impromptu" className="scroll-mt-24">
+          <ImpromptuSpeakingLab />
+        </div>
+        <div id="listening" className="scroll-mt-24">
+          <ListeningResponseLab />
+        </div>
+        <div id="executive" className="scroll-mt-24">
+          <ExecutiveSimulationsLab />
+        </div>
+        <div id="media" className="scroll-mt-24">
+          <MediaTrainingStudio drills={mediaDrills} />
+        </div>
       </div>
     </>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DEFAULT_USER_ID } from "../../lib/user";
 import { VoiceRecorder } from "../session/voice-recorder";
 
 type ExecutiveMode =
@@ -84,7 +85,7 @@ export function ExecutiveSimulationsLab() {
 
       {simulation ? (
         <VoiceRecorder
-          userId="user_001"
+          userId={DEFAULT_USER_ID}
           skillBranch="executive"
           initialSessionId="sess_001"
           initialExerciseId={`executive_${simulation.mode}`}

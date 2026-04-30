@@ -35,11 +35,14 @@ Run production services:
 - API: `npm run start -w @confidencebuilder/api`
 - Web: `npm run start -w @confidencebuilder/web`
 
+Do not run `next build` against the same `.next` directory while `next start` is serving traffic. Stop the web process, build, then start it again.
+
 ## Environment variables
 The repository includes `.env.example` with placeholders for:
 - OpenAI API key and model settings (`OPENAI_API_KEY`, `OPENAI_TRANSCRIPTION_MODEL`, `OPENAI_FEEDBACK_MODEL`, `OPENAI_REALTIME_MODEL`)
 - Runtime settings (`NODE_ENV`, `API_PORT`, `PORT`, request/audio limits)
-- Database URL (`DATABASE_URL`)
+- Local JSON persistence (`DB_FILE_PATH`) and future database URL (`DATABASE_URL`)
+- Default single-user ID (`NEXT_PUBLIC_DEFAULT_USER_ID`)
 - Auth/admin secrets (`AUTH_SECRET`, `ADMIN_API_TOKEN`, `ADMIN_UI_TOKEN`)
 - Storage provider credentials (`STORAGE_*`)
 - App/API base URLs (`APP_BASE_URL`, `API_BASE_URL`)
@@ -52,7 +55,7 @@ For full deployment setup (Vercel + API host, migration notes, and checklist), s
 - Recording still happens in the browser with `MediaRecorder`.
 - Audio is sent to a **server-side** path (`apps/web/app/session/recordings/transcribe/route.ts`) and then forwarded to the API (`POST /v1/recordings/transcribe`).
 - The API calls OpenAI transcription (`apps/api/src/services/transcription-service.ts`) using `OPENAI_API_KEY`, which is never exposed to browser code.
-- Transcription results are stored in the API in-memory database via `saveTranscriptForAttempt`, and the transcript is returned to the web client for display beside playback.
+- Transcription results are stored in the API state store via `saveTranscriptForAttempt`; when `DB_FILE_PATH` is configured, runtime changes are persisted to a local JSON snapshot.
 
 ## Phase 7 AI feedback integration notes
 - Prompt templates are centralized in `apps/api/src/lib/ai/prompts/feedback-prompts.ts`.

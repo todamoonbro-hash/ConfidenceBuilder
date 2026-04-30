@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { DEFAULT_USER_ID } from "../../lib/user";
 import { VoiceRecorder } from "../session/voice-recorder";
 
 type ArticulationDrill = {
@@ -72,7 +73,7 @@ export function ArticulationStudio({ drills }: ArticulationStudioProps) {
 
       {selectedDrill ? (
         <VoiceRecorder
-          userId="user_001"
+          userId={DEFAULT_USER_ID}
           skillBranch="articulation"
           initialSessionId="sess_001"
           initialExerciseId={selectedDrill.id}

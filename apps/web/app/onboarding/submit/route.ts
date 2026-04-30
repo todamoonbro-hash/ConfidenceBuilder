@@ -1,7 +1,9 @@
+import { resolveUserId } from "../../../lib/user";
+
 export async function POST(request: Request) {
   const formData = await request.formData();
 
-  const userId = String(formData.get("userId") ?? "user_001");
+  const userId = resolveUserId(String(formData.get("userId") ?? ""));
 
   const payload = {
     userId,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { DEFAULT_USER_ID } from "../../lib/user";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 type SkillBranch = "confidence" | "articulation" | "reading" | "impromptu" | "listening" | "executive" | "media" | "presentation" | "storytelling" | "persuasion";
@@ -55,7 +56,7 @@ const formatDuration = (seconds: number) => {
 };
 
 export function VoiceRecorder({
-  userId = "user_001",
+  userId = DEFAULT_USER_ID,
   skillBranch = "confidence",
   initialSessionId = "sess_001",
   initialExerciseId = "ex_art_001",
@@ -308,6 +309,7 @@ export function VoiceRecorder({
               "content-type": "application/json"
             },
             body: JSON.stringify({
+              userId,
               attemptId,
               sessionId,
               exerciseId,
@@ -712,6 +714,19 @@ export function VoiceRecorder({
         retryInstruction: result.feedback.retryInstruction,
         totalScore: result.score.total
       });
+
+      // Fire-and-forget: update XP, difficulty and quest progress
+      void fetch("/training/complete-step", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          skill: skillBranch,
+          exerciseId,
+          performanceScore: result.score.total,
+          completedAtDate: new Date().toISOString().slice(0, 10)
+        })
+      });
     } catch (error) {
       setFeedbackError(error instanceof Error ? error.message : "Feedback generation failed");
     } finally {
@@ -778,7 +793,7 @@ export function VoiceRecorder({
   };
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <section className="rounded-lg border border-slate-200 bg-white p-4">
       <h2 className="text-lg font-semibold text-slate-900">Recorder and feedback</h2>
       <p className="mt-1 text-sm text-slate-600">Record once, review quickly, and apply one improvement on your retry.</p>
       {drillInstruction ? (

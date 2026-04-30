@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DEFAULT_USER_ID } from "../../lib/user";
 
 type CoachMode = "interview_simulation" | "confidence_check_in" | "quick_speaking_warmup" | "media_practice" | "impromptu_speaking";
 
-export function RealtimeVoiceCoach({ userId = "user_001" }: { userId?: string }) {
+export function RealtimeVoiceCoach({ userId = DEFAULT_USER_ID }: { userId?: string }) {
   const [mode, setMode] = useState<CoachMode>("confidence_check_in");
   const [sessionId, setSessionId] = useState<string | undefined>();
   const [realtimeAvailable, setRealtimeAvailable] = useState(false);

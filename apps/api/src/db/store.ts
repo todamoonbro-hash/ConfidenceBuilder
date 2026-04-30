@@ -1,3 +1,6 @@
+import { dirname, resolve } from "node:path";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+
 import type {
   Attempt,
   RecordingMetadata,
@@ -23,7 +26,38 @@ import type {
 import { createSeedSnapshot } from "./seed-data";
 import { computeStageProgression } from "../services/stage-progression-service";
 
-let snapshot: DatabaseSnapshot = createSeedSnapshot();
+const persistenceDisabled =
+  process.env.CONFIDENCEBUILDER_DISABLE_PERSISTENCE === "true" ||
+  process.env.npm_lifecycle_event === "test" ||
+  process.argv.some((arg) => arg.endsWith(".test.mjs"));
+const databaseFilePath = resolve(process.cwd(), process.env.DB_FILE_PATH ?? ".data/confidencebuilder-db.json");
+
+function loadInitialSnapshot(): DatabaseSnapshot {
+  if (persistenceDisabled || !existsSync(databaseFilePath)) {
+    return createSeedSnapshot();
+  }
+
+  try {
+    return JSON.parse(readFileSync(databaseFilePath, "utf-8")) as DatabaseSnapshot;
+  } catch {
+    return createSeedSnapshot();
+  }
+}
+
+let snapshot: DatabaseSnapshot = loadInitialSnapshot();
+
+function persistSnapshot() {
+  if (persistenceDisabled) return;
+  mkdirSync(dirname(databaseFilePath), { recursive: true });
+  const temporaryPath = `${databaseFilePath}.tmp`;
+  writeFileSync(temporaryPath, JSON.stringify(snapshot, null, 2));
+  renameSync(temporaryPath, databaseFilePath);
+}
+
+function commit<T>(value: T): T {
+  persistSnapshot();
+  return value;
+}
 
 function generateTrainingProfile(preference: OnboardingPreferences): TrainingProfile {
   const levelBand = preference.confidenceLevel <= 3 ? "foundation" : preference.confidenceLevel <= 7 ? "growth" : "performance";
@@ -54,9 +88,16 @@ export function getDatabase(): DatabaseSnapshot {
   return snapshot;
 }
 
+export function getPersistenceStatus() {
+  return {
+    enabled: !persistenceDisabled,
+    path: persistenceDisabled ? null : databaseFilePath
+  };
+}
+
 export function resetDatabaseFromSeed(): DatabaseSnapshot {
   snapshot = createSeedSnapshot();
-  return snapshot;
+  return commit(snapshot);
 }
 
 export function saveOnboardingPreferences(
@@ -98,7 +139,7 @@ export function saveOnboardingPreferences(
     });
   }
 
-  return { preference, profile };
+  return commit({ preference, profile });
 }
 
 export function getTrainingProfileByUser(userId: string) {
@@ -115,7 +156,7 @@ export function getGameProgressByUser(userId: string): GameProgress | undefined 
 export function saveGameProgress(progress: GameProgress): GameProgress {
   const staged = computeStageProgression(snapshot, progress);
   snapshot.gameProgressions = [...snapshot.gameProgressions.filter((item) => item.userId !== progress.userId), staged];
-  return staged;
+  return commit(staged);
 }
 
 export function getQuestStatusForUser(userId: string): Array<{ quest: Quest; status: QuestStatus; progress?: UserQuestProgress }> {
@@ -164,7 +205,7 @@ export function startQuest(userId: string, questId: string): UserQuestProgress |
 
   snapshot.userQuestProgress = [...snapshot.userQuestProgress.filter((item) => item.id !== progress.id), progress];
 
-  return progress;
+  return commit(progress);
 }
 
 export function getActiveQuestByUser(userId: string): { quest?: Quest; progress?: UserQuestProgress } {
@@ -175,15 +216,16 @@ export function getActiveQuestByUser(userId: string): { quest?: Quest; progress?
 
 export function saveUserQuestProgress(updatedProgress: UserQuestProgress): UserQuestProgress {
   snapshot.userQuestProgress = [...snapshot.userQuestProgress.filter((item) => item.id !== updatedProgress.id), updatedProgress];
-  return updatedProgress;
+  return commit(updatedProgress);
 }
 
 export function saveUnlockedBadges(newBadges: UserBadge[]): UserBadge[] {
   snapshot.userBadges = [...snapshot.userBadges, ...newBadges];
-  return newBadges;
+  return commit(newBadges);
 }
 
 type SaveRecordingPayload = {
+  userId?: string;
   attemptId?: string;
   sessionId: string;
   exerciseId: string;
@@ -195,6 +237,17 @@ type SaveRecordingPayload = {
 };
 
 export function saveRecordingForAttempt(payload: SaveRecordingPayload): { attempt: Attempt; recording: RecordingMetadata } {
+  if (payload.userId && !snapshot.trainingSessions.some((item) => item.id === payload.sessionId)) {
+    snapshot.trainingSessions.push({
+      id: payload.sessionId,
+      userId: payload.userId,
+      dailyPlanId: `ad_hoc_${payload.userId}`,
+      startedAt: payload.startedAt,
+      completedAt: payload.stoppedAt,
+      status: "completed"
+    });
+  }
+
   const existingAttempt = payload.attemptId ? snapshot.attempts.find((item) => item.id === payload.attemptId) : undefined;
 
   const attempt: Attempt = existingAttempt ?? {
@@ -228,7 +281,32 @@ export function saveRecordingForAttempt(payload: SaveRecordingPayload): { attemp
 
   snapshot.recordings.push(recording);
 
-  return { attempt, recording };
+  return commit({ attempt, recording });
+}
+
+export function getAttemptHistoryByUser(userId: string, limit = 20) {
+  const sessionIds = new Set(snapshot.trainingSessions.filter((session) => session.userId === userId).map((session) => session.id));
+
+  return snapshot.attempts
+    .filter((attempt) => sessionIds.has(attempt.sessionId))
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+    .slice(0, limit)
+    .map((attempt) => {
+      const exercise = snapshot.exercises.find((item) => item.id === attempt.exerciseId);
+      const transcript = snapshot.transcripts.find((item) => item.attemptId === attempt.id);
+      const score = snapshot.scores.find((item) => item.attemptId === attempt.id);
+      const feedback = snapshot.feedbackItems.find((item) => item.attemptId === attempt.id);
+      const recording = snapshot.recordings.find((item) => item.attemptId === attempt.id);
+
+      return {
+        attempt,
+        exercise,
+        transcript,
+        score,
+        feedback,
+        recording
+      };
+    });
 }
 
 export function saveTranscriptForAttempt(payload: { attemptId: string; content: string }): Transcript {
@@ -249,7 +327,7 @@ export function saveTranscriptForAttempt(payload: { attemptId: string; content: 
       };
 
   snapshot.transcripts = [...snapshot.transcripts.filter((item) => item.attemptId !== payload.attemptId), transcript];
-  return transcript;
+  return commit(transcript);
 }
 
 export function getAttemptById(attemptId: string): Attempt | undefined {
@@ -267,7 +345,7 @@ export function saveFeedbackForAttempt(payload: Omit<FeedbackItem, "id">): Feedb
     : { id: `fb_${String(snapshot.feedbackItems.length + 1).padStart(3, "0")}`, ...payload };
 
   snapshot.feedbackItems = [...snapshot.feedbackItems.filter((item) => item.attemptId !== payload.attemptId), feedback];
-  return feedback;
+  return commit(feedback);
 }
 
 export function saveScoreForAttempt(payload: Omit<Score, "id">): Score {
@@ -277,7 +355,7 @@ export function saveScoreForAttempt(payload: Omit<Score, "id">): Score {
     : { id: `score_${String(snapshot.scores.length + 1).padStart(3, "0")}`, ...payload };
 
   snapshot.scores = [...snapshot.scores.filter((item) => item.attemptId !== payload.attemptId), score];
-  return score;
+  return commit(score);
 }
 
 export function getPersonalCoachProfileByUser(userId: string): PersonalCoachProfile | undefined {
@@ -293,7 +371,7 @@ export function savePersonalCoachProfile(payload: Omit<PersonalCoachProfile, "id
   };
 
   snapshot.personalCoachProfiles = [...snapshot.personalCoachProfiles.filter((item) => item.userId !== payload.userId), profile];
-  return profile;
+  return commit(profile);
 }
 
 export function getModelPreferences(): ModelPreference[] {
@@ -306,7 +384,7 @@ export function getModelPreferenceForTask(task: ModelPreference["task"]): ModelP
 
 export function saveModelPreferences(preferences: ModelPreference[]): ModelPreference[] {
   snapshot.modelPreferences = preferences;
-  return snapshot.modelPreferences;
+  return commit(snapshot.modelPreferences);
 }
 
 export function getSessionMemoriesByUser(userId: string, limit = 8): SessionMemory[] {
@@ -336,7 +414,7 @@ export function saveSessionMemory(payload: {
   };
 
   snapshot.sessionMemories = [memory, ...snapshot.sessionMemories].slice(0, 100);
-  return memory;
+  return commit(memory);
 }
 
 export function getMediaKeyMessagesByUser(userId: string): MediaKeyMessageSet | undefined {
@@ -359,7 +437,7 @@ export function saveMediaKeyMessages(payload: { userId: string; messages: string
       };
 
   snapshot.mediaKeyMessageSets = [...snapshot.mediaKeyMessageSets.filter((item) => item.userId !== payload.userId), messageSet];
-  return messageSet;
+  return commit(messageSet);
 }
 
 
@@ -395,14 +473,14 @@ export function startBossChallenge(userId: string, challengeId: string): BossCha
     sessionId: `boss_session_${snapshot.bossChallengeAttempts.length + 1}`,
     attemptId: `boss_audio_${snapshot.bossChallengeAttempts.length + 1}`,
     startedAt: new Date().toISOString(),
-    transcriptPlaceholder: "Transcript placeholder: transcription pipeline not wired for boss mode yet.",
-    scoringPlaceholder: "Scoring placeholder: feedback engine hook pending.",
+    transcript: "",
+    scoringNote: "Boss challenge scoring uses the submitted performance score until transcript-based scoring is available.",
     outcome: "in_progress",
     xpGranted: 0
   };
 
   snapshot.bossChallengeAttempts.push(attempt);
-  return attempt;
+  return commit(attempt);
 }
 
 export function completeBossChallenge(attemptId: string, performanceScore: number): BossChallengeAttempt | undefined {
@@ -433,7 +511,7 @@ export function completeBossChallenge(attemptId: string, performanceScore: numbe
     saveGameProgress({ ...progress, overallXp: progress.overallXp + xpGranted });
   }
 
-  return updated;
+  return commit(updated);
 }
 
 export function getOverview() {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { DEFAULT_USER_ID } from "../../lib/user";
 
 export function DifficultConversationsStudio({ library }: { library: any }) {
   const scenarios = library?.scenarios ?? [];
@@ -59,7 +60,7 @@ export function DifficultConversationsStudio({ library }: { library: any }) {
 
         <div className="mt-3 flex flex-wrap gap-2">
           <button type="button" className="rounded-md bg-slate-900 px-3 py-2 text-sm text-white" onClick={async () => {
-            const response = await fetch("/difficult-conversations/session/start", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId: "user_001", scenarioId, framework, toneTarget, personaStyle, pressureMode }) });
+            const response = await fetch("/difficult-conversations/session/start", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId: DEFAULT_USER_ID, scenarioId, framework, toneTarget, personaStyle, pressureMode }) });
             const payload = await response.json();
             if (payload.ok) {
               setSessionId(payload.session.id);
@@ -78,7 +79,7 @@ export function DifficultConversationsStudio({ library }: { library: any }) {
           }}>Send answer</button>
           <button type="button" className="rounded-md bg-emerald-700 px-3 py-2 text-sm text-white" onClick={async () => {
             if (!sessionId) return;
-            const response = await fetch("/difficult-conversations/session/end", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId, userId: "user_001" }) });
+            const response = await fetch("/difficult-conversations/session/end", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId, userId: DEFAULT_USER_ID }) });
             const payload = await response.json();
             if (payload.ok) {
               setResult(payload);

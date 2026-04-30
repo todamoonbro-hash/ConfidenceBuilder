@@ -21,7 +21,7 @@ export interface AdaptiveDailyPlan {
   totalXpReward: number;
   totalSkillXpReward: number;
   recommendedNextDrill: SkillBranch;
-  weeklyBossChallengePlaceholder: string;
+  weeklyBossChallenge: string;
 }
 
 function recommendNextDrill(progress: GameProgress): SkillBranch {
@@ -106,6 +106,6 @@ export function generateAdaptiveDailyPlan(input: {
     totalXpReward,
     totalSkillXpReward,
     recommendedNextDrill: nextSkill,
-    weeklyBossChallengePlaceholder: "Beginner Boardroom Challenge (placeholder)"
+    weeklyBossChallenge: "Beginner Boardroom Challenge"
   };
 }

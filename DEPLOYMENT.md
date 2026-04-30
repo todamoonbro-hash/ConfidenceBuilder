@@ -19,6 +19,8 @@ Run production servers locally after build:
 - API: `npm run start -w @confidencebuilder/api`
 - Web: `npm run start -w @confidencebuilder/web`
 
+Stop the web server before rebuilding. Rebuilding `.next` while `next start` is serving can cause transient 500s for assets or route payloads.
+
 ---
 
 ## 2) Environment variables
@@ -34,7 +36,9 @@ Use `.env.example` as the source of truth and copy values into environment confi
 | `OPENAI_FEEDBACK_MODEL` | API | No | Feedback model name |
 | `OPENAI_REALTIME_MODEL` | API | No | Enables realtime-availability branch |
 | `OPENAI_TIMEOUT_MS` | API | Recommended | Timeout for OpenAI transcription/feedback requests |
-| `DATABASE_URL` | Future DB adapter | No (current in-memory mode) | Planned Postgres connection string |
+| `DB_FILE_PATH` | API | Recommended | Local JSON state snapshot path for durable single-user use |
+| `DATABASE_URL` | Future DB adapter | No | Planned Postgres connection string |
+| `NEXT_PUBLIC_DEFAULT_USER_ID` | Web | Recommended | Default active user id for single-user mode |
 | `AUTH_SECRET` | Future auth hardening | Recommended | Secret for auth/session infrastructure |
 | `ADMIN_API_TOKEN` | API + Web | Required for admin tools | Server-to-server token for Scenario Studio admin APIs |
 | `ADMIN_UI_TOKEN` | Web | Required for admin tools | Token required to open Scenario Studio admin UI |

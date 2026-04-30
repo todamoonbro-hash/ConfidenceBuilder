@@ -1,3 +1,5 @@
+import { resolveUserId } from "../../../lib/user";
+
 export async function POST(request: Request) {
   const body = await request.json();
   const response = await fetch(`${process.env.API_BASE_URL ?? "http://localhost:4000"}/v1/interview/role-setup`, {
@@ -9,7 +11,7 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
-  const userId = new URL(request.url).searchParams.get("userId") ?? "user_001";
-  const response = await fetch(`${process.env.API_BASE_URL ?? "http://localhost:4000"}/v1/interview/role-setup/${userId}`, { cache: "no-store" });
+  const userId = resolveUserId(new URL(request.url).searchParams.get("userId"));
+  const response = await fetch(`${process.env.API_BASE_URL ?? "http://localhost:4000"}/v1/interview/role-setup/${encodeURIComponent(userId)}`, { cache: "no-store" });
   return Response.json(await response.json(), { status: response.status });
 }

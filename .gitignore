@@ -5,6 +5,9 @@ node_modules/
 apps/web/.next/
 apps/api/dist/
 apps/web/tsconfig.tsbuildinfo
+apps/api/.data/
+apps/web/test-results/
+apps/web/playwright-report/
 
 # env files (keep examples only)
 .env
@@ -12,6 +15,7 @@ apps/web/tsconfig.tsbuildinfo
 !.env.example
 
 # logs
+.logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

@@ -24,6 +24,7 @@ type PersonalProfile = {
 };
 
 type PersonalCoachSettingsProps = {
+  userId: string;
   initialData: {
     personalProfile?: PersonalProfile;
     modelPreferences?: ModelPreference[];
@@ -73,7 +74,7 @@ function textToList(value: string) {
     .filter(Boolean);
 }
 
-export function PersonalCoachSettings({ initialData }: PersonalCoachSettingsProps) {
+export function PersonalCoachSettings({ initialData, userId }: PersonalCoachSettingsProps) {
   const [profile, setProfile] = useState<PersonalProfile>(initialData?.personalProfile ?? defaultProfile);
   const [targetSituationsText, setTargetSituationsText] = useState(listToText(initialData?.personalProfile?.targetSituations ?? defaultProfile.targetSituations));
   const [weaknessesText, setWeaknessesText] = useState(listToText(initialData?.personalProfile?.knownWeaknesses ?? defaultProfile.knownWeaknesses));
@@ -84,7 +85,7 @@ export function PersonalCoachSettings({ initialData }: PersonalCoachSettingsProp
   const save = async () => {
     setSaveState("saving");
     try {
-      const response = await fetch("/coach/personalization?userId=user_001", {
+      const response = await fetch(`/coach/personalization?userId=${encodeURIComponent(userId)}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -107,7 +108,7 @@ export function PersonalCoachSettings({ initialData }: PersonalCoachSettingsProp
 
   return (
     <section className="grid gap-4">
-      <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+      <article className="rounded-lg border border-slate-200 bg-white p-5">
         <h2 className="text-lg font-semibold text-slate-900">Personal coach profile</h2>
         <div className="mt-4 grid gap-4">
           <label className="grid gap-1 text-sm">
@@ -154,7 +155,7 @@ export function PersonalCoachSettings({ initialData }: PersonalCoachSettingsProp
         </div>
       </article>
 
-      <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+      <article className="rounded-lg border border-slate-200 bg-white p-5">
         <h2 className="text-lg font-semibold text-slate-900">Cost-first model routing</h2>
         <div className="mt-4 grid gap-3">
           {preferences.map((preference, index) => (
@@ -183,7 +184,7 @@ export function PersonalCoachSettings({ initialData }: PersonalCoachSettingsProp
         {saveState === "error" ? <p className="mt-2 text-sm text-red-700">Could not save. Check the API is running.</p> : null}
       </article>
 
-      <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+      <article className="rounded-lg border border-slate-200 bg-white p-5">
         <h2 className="text-lg font-semibold text-slate-900">Recent coaching memory</h2>
         <div className="mt-3 grid gap-2">
           {recentMemory.length === 0 ? <p className="text-sm text-slate-600">No saved coaching memory yet. Generate feedback after a recording to create one.</p> : null}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DEFAULT_USER_ID } from "../../lib/user";
 
 export function InterviewPrepStudio({ library }: { library: any }) {
   const [setupSaved, setSetupSaved] = useState<any>();
@@ -13,6 +14,7 @@ export function InterviewPrepStudio({ library }: { library: any }) {
   const [positioning, setPositioning] = useState<any>();
   const [plan, setPlan] = useState<any>();
   const [progress, setProgress] = useState<any>();
+  const userIdQuery = encodeURIComponent(DEFAULT_USER_ID);
 
   return (
     <section className="grid gap-4">
@@ -30,7 +32,7 @@ export function InterviewPrepStudio({ library }: { library: any }) {
           className="mt-2 rounded-md bg-slate-900 px-3 py-2 text-sm text-white"
           onClick={async () => {
             const payload = {
-              userId: "user_001",
+              userId: DEFAULT_USER_ID,
               targetRoleTitle: "VP Finance",
               company: "Northstar Tech",
               industry: "SaaS",
@@ -68,7 +70,7 @@ export function InterviewPrepStudio({ library }: { library: any }) {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                  userId: "user_001",
+                  userId: DEFAULT_USER_ID,
                   title: "Led change under pressure",
                   situation: "revenue decline",
                   task: "stabilize operations",
@@ -86,7 +88,7 @@ export function InterviewPrepStudio({ library }: { library: any }) {
                   weaknessRiskNotes: "avoid too much context"
                 })
               });
-              const listRes = await fetch("/interview-prep/story-bank?userId=user_001");
+              const listRes = await fetch(`/interview-prep/story-bank?userId=${userIdQuery}`);
               const list = await listRes.json();
               if (list.ok) setStories(list.stories);
             }}
@@ -101,7 +103,7 @@ export function InterviewPrepStudio({ library }: { library: any }) {
         <h2 className="text-lg font-semibold">Mock Interview</h2>
         <div className="mt-2 flex flex-wrap gap-2">
           <button type="button" className="rounded-md bg-slate-900 px-3 py-2 text-sm text-white" onClick={async () => {
-            const response = await fetch("/interview-prep/mock/start", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId: "user_001", mode: "recruiter_screen" }) });
+            const response = await fetch("/interview-prep/mock/start", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId: DEFAULT_USER_ID, mode: "recruiter_screen" }) });
             const result = await response.json();
             if (result.ok) {
               setSessionId(result.session.id);
@@ -119,7 +121,7 @@ export function InterviewPrepStudio({ library }: { library: any }) {
           }}>Send answer</button>
           <button type="button" className="rounded-md bg-emerald-700 px-3 py-2 text-sm text-white" onClick={async () => {
             if (!sessionId) return;
-            const response = await fetch("/interview-prep/mock/end", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId, userId: "user_001" }) });
+            const response = await fetch("/interview-prep/mock/end", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId, userId: DEFAULT_USER_ID }) });
             const result = await response.json();
             if (result.ok) {
               setReport(result.report);
@@ -158,7 +160,7 @@ export function InterviewPrepStudio({ library }: { library: any }) {
           <h3 className="font-semibold">Personal Positioning</h3>
           <button type="button" className="mt-2 rounded-md border border-slate-300 px-3 py-2 text-sm" onClick={async () => {
             const response = await fetch("/interview-prep/positioning", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(setupSaved?.setup ?? {
-              userId: "user_001", targetRoleTitle: "VP Finance", company: "Northstar Tech", industry: "SaaS", seniority: "senior", jobDescription: "", resumeText: "", linkedInText: "", interviewStage: "", interviewFormat: "video", knownInterviewers: [], keyConcerns: [], mustSayPoints: [], topicsToAvoid: []
+              userId: DEFAULT_USER_ID, targetRoleTitle: "VP Finance", company: "Northstar Tech", industry: "SaaS", seniority: "senior", jobDescription: "", resumeText: "", linkedInText: "", interviewStage: "", interviewFormat: "video", knownInterviewers: [], keyConcerns: [], mustSayPoints: [], topicsToAvoid: []
             }) });
             const result = await response.json();
             if (result.ok) setPositioning(result.positioning);
@@ -171,7 +173,7 @@ export function InterviewPrepStudio({ library }: { library: any }) {
         <article className="rounded-lg border border-slate-200 bg-white p-4">
           <h3 className="font-semibold">Interview Plan</h3>
           <button type="button" className="mt-2 rounded-md border border-slate-300 px-3 py-2 text-sm" onClick={async () => {
-            const response = await fetch("/interview-prep/plan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId: "user_001", interviewDate: "2026-06-20", roleTitle: "VP Finance" }) });
+            const response = await fetch("/interview-prep/plan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId: DEFAULT_USER_ID, interviewDate: "2026-06-20", roleTitle: "VP Finance" }) });
             const result = await response.json();
             if (result.ok) setPlan(result.plan);
           }}>Generate prep plan</button>
@@ -181,8 +183,8 @@ export function InterviewPrepStudio({ library }: { library: any }) {
         <article className="rounded-lg border border-slate-200 bg-white p-4">
           <h3 className="font-semibold">Post-Interview Reflection</h3>
           <button type="button" className="mt-2 rounded-md border border-slate-300 px-3 py-2 text-sm" onClick={async () => {
-            await fetch("/interview-prep/reflection", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId: "user_001", questionsAsked: ["Why this role?"], answersWentWell: ["positioning"], answersFailed: ["weakness answer"], objectionsConcerns: ["industry depth"], followUpRequired: "share KPI example", improvementsNextTime: "more concise", requestFollowUpEmail: true }) });
-            const pRes = await fetch("/interview-prep/progress?userId=user_001");
+            await fetch("/interview-prep/reflection", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId: DEFAULT_USER_ID, questionsAsked: ["Why this role?"], answersWentWell: ["positioning"], answersFailed: ["weakness answer"], objectionsConcerns: ["industry depth"], followUpRequired: "share KPI example", improvementsNextTime: "more concise", requestFollowUpEmail: true }) });
+            const pRes = await fetch(`/interview-prep/progress?userId=${userIdQuery}`);
             const p = await pRes.json();
             if (p.ok) setProgress(p);
           }}>Save reflection + refresh progress</button>

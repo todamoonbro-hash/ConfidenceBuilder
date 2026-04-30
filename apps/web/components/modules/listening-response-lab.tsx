@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DEFAULT_USER_ID } from "../../lib/user";
 import { VoiceRecorder } from "../session/voice-recorder";
 
 type ListeningDrillType =
@@ -87,7 +88,7 @@ export function ListeningResponseLab() {
 
       {drill ? (
         <VoiceRecorder
-          userId="user_001"
+          userId={DEFAULT_USER_ID}
           skillBranch="listening"
           initialSessionId="sess_001"
           initialExerciseId={drill.id}

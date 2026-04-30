@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { DEFAULT_USER_ID } from "../../lib/user";
 import { VoiceRecorder } from "../session/voice-recorder";
 
 type MediaDrill = {
@@ -59,7 +60,7 @@ export function MediaTrainingStudio({ drills }: MediaTrainingStudioProps) {
       headers: {
         "content-type": "application/json"
       },
-      body: JSON.stringify({ userId: "user_001", messages: clean })
+      body: JSON.stringify({ userId: DEFAULT_USER_ID, messages: clean })
     });
 
     const result = await response.json();
@@ -251,7 +252,7 @@ export function MediaTrainingStudio({ drills }: MediaTrainingStudioProps) {
 
       {selectedDrill ? (
         <VoiceRecorder
-          userId="user_001"
+          userId={DEFAULT_USER_ID}
           skillBranch="media"
           initialSessionId="sess_001"
           initialExerciseId={selectedDrill.id}

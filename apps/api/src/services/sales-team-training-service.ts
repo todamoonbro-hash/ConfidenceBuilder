@@ -2,7 +2,7 @@ import { SALES_CERTIFICATIONS, SALES_SCENARIOS } from "./sales-influence-data-se
 
 export function getTeamTrainingOverview() {
   return {
-    featureStatus: "placeholder_ready_for_multi_user_auth",
+    featureStatus: "single_user_training_insights",
     cards: {
       completionPercent: 68,
       averageScore: 74,

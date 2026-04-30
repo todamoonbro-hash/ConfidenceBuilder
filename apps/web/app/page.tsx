@@ -1,57 +1,90 @@
-import { PageHeader } from "../components/ui/page-header";
+import { resolveUserId } from "../lib/user";
 
-export default function HomePage() {
+type DashboardSummary = {
+  sessionStreak: number;
+  levelProgress: { level: number; levelTitle: string };
+  nextRecommendedDrill: { id: string; title: string; drillType: string } | null;
+  milestone: { nextSkillFocus: string };
+};
+
+async function loadHomeSummary(userId: string): Promise<DashboardSummary | null> {
+  try {
+    const response = await fetch(`${process.env.API_BASE_URL ?? "http://localhost:4000"}/v1/dashboard/${encodeURIComponent(userId)}`, { cache: "no-store" });
+    if (!response.ok) return null;
+    const payload = (await response.json()) as { dashboard?: DashboardSummary };
+    return payload.dashboard ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export default async function HomePage() {
+  const userId = resolveUserId();
+  const summary = await loadHomeSummary(userId);
+
+  const drillTitle = summary?.nextRecommendedDrill?.title ?? "Run a baseline speaking rep";
+  const skillFocus = summary?.milestone.nextSkillFocus ?? "Confidence";
+  const streak = summary?.sessionStreak ?? 0;
+  const level = summary?.levelProgress.level ?? 1;
+  const levelTitle = summary?.levelProgress.levelTitle ?? "Rookie Speaker";
+
   return (
     <>
-      <PageHeader
-        kicker="Academy"
-        title="Train like a leader people trust"
-        subtitle="One focused speaking session daily builds the clarity, calm, and confidence that moves organizations."
-      />
+      <section className="mb-8 overflow-hidden rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-50 via-white to-white p-7 md:p-10">
+        <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
+          <span className="inline-flex items-center gap-1 rounded-full bg-white/80 px-3 py-1 text-brand-700 ring-1 ring-brand-100">
+            Day {streak} streak
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-white/80 px-3 py-1 text-slate-700 ring-1 ring-slate-200">
+            Level {level} - {levelTitle}
+          </span>
+        </div>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:col-span-2">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Today's focus</p>
-              <h2 className="mt-2 text-lg font-semibold text-slate-900 md:text-xl">Start your daily session</h2>
-              <p className="mt-2 text-sm text-slate-600">Record one speaking rep, get real feedback, apply one fix, and retry. Builds momentum.</p>
-              <a href="/session" className="mt-4 inline-flex min-h-10 items-center rounded-md bg-slate-900 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-700">
-                Start session
-              </a>
-            </div>
-          </div>
-        </article>
+        <p className="mt-6 text-sm font-semibold uppercase tracking-wider text-brand-600">Today's focus</p>
+        <h1 className="mt-2 text-3xl font-semibold leading-tight text-slate-950 md:text-4xl">
+          Train like a leader people trust
+        </h1>
+        <h2 className="mt-4 text-xl font-semibold text-slate-900">{drillTitle}</h2>
+        <p className="mt-3 max-w-2xl text-[15px] text-slate-600">
+          Skill focus: <span className="font-medium text-slate-900">{skillFocus}</span> - One focused rep,
+          honest feedback, one fix, retry. About 12 minutes.
+        </p>
 
-        <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Smart path</p>
-          <ol className="mt-3 space-y-2 text-sm text-slate-700">
-            {["Check your dashboard", "Record session", "Apply feedback"].map((item, index) => (
-              <li key={item} className="flex items-center gap-2">
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">{index + 1}</span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ol>
-        </article>
+        <div className="mt-7 flex flex-wrap items-center gap-3">
+          <a
+            href="/session"
+            className="inline-flex min-h-12 items-center rounded-lg bg-brand-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition-all hover:bg-brand-700 hover:-translate-y-px"
+          >
+            Start session
+          </a>
+          <a
+            href="/practice"
+            className="inline-flex min-h-12 items-center rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-800 transition-colors hover:bg-slate-50"
+          >
+            Pick a drill
+          </a>
+        </div>
       </section>
 
-      <section className="mt-6 grid gap-4 md:grid-cols-2">
-        <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-900">Training Labs</h3>
-          <p className="mt-1 text-xs text-slate-600">Deep-focus modules: articulation, reading, interviews, executive presence, and more.</p>
-          <a href="/modules" className="mt-3 inline-flex text-sm font-medium text-slate-900 hover:text-slate-600">
-            Explore labs
+      <section className="mb-2">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Or jump to</p>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <a href="/practice" className="group rounded-lg border border-slate-200 bg-white p-5 transition-all hover:border-brand-200 hover:bg-brand-50/40">
+            <p className="text-sm font-semibold text-slate-900">Practice</p>
+            <p className="mt-1 text-xs text-slate-600">Skills, scenarios, and quests in one place.</p>
+            <p className="mt-3 text-xs font-medium text-brand-600 group-hover:text-brand-700">Browse</p>
           </a>
-        </article>
-
-        <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-900">Professional Quests</h3>
-          <p className="mt-1 text-xs text-slate-600">Multi-day challenge tracks with clear reps, checkpoints, and outcomes.</p>
-          <a href="/quests" className="mt-3 inline-flex text-sm font-medium text-slate-900 hover:text-slate-600">
-            View quests
+          <a href="/dashboard" className="group rounded-lg border border-slate-200 bg-white p-5 transition-all hover:border-brand-200 hover:bg-brand-50/40">
+            <p className="text-sm font-semibold text-slate-900">Progress</p>
+            <p className="mt-1 text-xs text-slate-600">Trends, streak, weakest area, weekly review.</p>
+            <p className="mt-3 text-xs font-medium text-brand-600 group-hover:text-brand-700">View</p>
           </a>
-        </article>
+          <a href="/coach" className="group rounded-lg border border-slate-200 bg-white p-5 transition-all hover:border-brand-200 hover:bg-brand-50/40">
+            <p className="text-sm font-semibold text-slate-900">Coach</p>
+            <p className="mt-1 text-xs text-slate-600">Live AI coach plus your personalization profile.</p>
+            <p className="mt-3 text-xs font-medium text-brand-600 group-hover:text-brand-700">Open</p>
+          </a>
+        </div>
       </section>
     </>
   );

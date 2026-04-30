@@ -1,7 +1,9 @@
+import { resolveUserId } from "../../../lib/user";
+
 export async function POST(request: Request) {
   const formData = await request.formData();
 
-  const userId = String(formData.get("userId") ?? "user_001");
+  const userId = resolveUserId(String(formData.get("userId") ?? ""));
   const questId = String(formData.get("questId") ?? "");
 
   if (questId) {
@@ -15,5 +17,5 @@ export async function POST(request: Request) {
     });
   }
 
-  return Response.redirect(new URL(`/dashboard?userId=${encodeURIComponent(userId)}`, request.url), 302);
+  return Response.redirect(new URL(`/quests?userId=${encodeURIComponent(userId)}`, request.url), 302);
 }

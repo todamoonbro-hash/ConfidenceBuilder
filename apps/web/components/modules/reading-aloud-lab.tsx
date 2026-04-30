@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { DEFAULT_USER_ID } from "../../lib/user";
 import { VoiceRecorder } from "../session/voice-recorder";
 
 type ReadingPassage = {
@@ -96,7 +97,7 @@ export function ReadingAloudLab({ passages }: ReadingAloudLabProps) {
             )}
           </div>
           <VoiceRecorder
-            userId="user_001"
+            userId={DEFAULT_USER_ID}
             skillBranch="reading"
             initialSessionId="sess_001"
             initialExerciseId={selectedPassage.id}

@@ -3,11 +3,13 @@ import Fastify from "fastify";
 import {
   getActiveQuestByUser,
   getDatabase,
+  getAttemptHistoryByUser,
   getGameProgressByUser,
   getMediaKeyMessagesByUser,
   getModelPreferenceForTask,
   getModelPreferences,
   getOverview,
+  getPersistenceStatus,
   getPersonalCoachProfileByUser,
   getQuestStatusForUser,
   getSessionMemoriesByUser,
@@ -106,6 +108,28 @@ function isAdminRequest(request: { headers: Record<string, unknown> }) {
 }
 
 app.get("/health", async () => ({ status: "ok", service: "confidencebuilder-api", date: new Date().toISOString() }));
+
+app.get("/v1/config/status", async () => ({
+  ok: true,
+  persistence: getPersistenceStatus(),
+  providers: {
+    openai: Boolean(process.env.OPENAI_API_KEY),
+    openrouter: Boolean(process.env.OPENROUTER_API_KEY),
+    deepseek: Boolean(process.env.DEEPSEEK_API_KEY),
+    mistral: Boolean(process.env.MISTRAL_API_KEY),
+    xai: Boolean(process.env.XAI_API_KEY),
+    groq: Boolean(process.env.GROQ_API_KEY),
+    together: Boolean(process.env.TOGETHER_API_KEY),
+    fireworks: Boolean(process.env.FIREWORKS_API_KEY),
+    anthropicCompat: Boolean(process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_OPENAI_COMPAT_BASE_URL),
+    geminiCompat: Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_OPENAI_COMPAT_BASE_URL),
+    local: Boolean(process.env.LOCAL_LLM_BASE_URL)
+  },
+  voice: {
+    transcriptionConfigured: Boolean(process.env.OPENAI_API_KEY),
+    realtimeConfigured: Boolean(process.env.OPENAI_API_KEY && process.env.OPENAI_REALTIME_MODEL)
+  }
+}));
 
 app.get("/v1/quests/:userId", async (request) => {
   const params = request.params as { userId: string };
@@ -240,8 +264,9 @@ app.post("/v1/training/complete-step", async (request) => {
 });
 
 app.get("/v1/training/overview", async () => ({ overview: getOverview() }));
-app.get("/v1/admin/scenario-studio/scenarios", async (request) => {
+app.get("/v1/admin/scenario-studio/scenarios", async (request, reply) => {
   if (!isAdminRequest(request as unknown as { headers: Record<string, unknown> })) {
+    reply.code(401);
     return { ok: false, error: "access_denied" };
   }
 
@@ -259,8 +284,9 @@ app.get("/v1/admin/scenario-studio/scenarios", async (request) => {
   };
 });
 
-app.post("/v1/admin/scenario-studio/scenarios", async (request) => {
+app.post("/v1/admin/scenario-studio/scenarios", async (request, reply) => {
   if (!isAdminRequest(request as unknown as { headers: Record<string, unknown> })) {
+    reply.code(401);
     return { ok: false, error: "access_denied" };
   }
 
@@ -271,8 +297,9 @@ app.post("/v1/admin/scenario-studio/scenarios", async (request) => {
   return { ok: true, scenario: createScenarioDefinition(body) };
 });
 
-app.post("/v1/admin/scenario-studio/scenarios/:id/update", async (request) => {
+app.post("/v1/admin/scenario-studio/scenarios/:id/update", async (request, reply) => {
   if (!isAdminRequest(request as unknown as { headers: Record<string, unknown> })) {
+    reply.code(401);
     return { ok: false, error: "access_denied" };
   }
 
@@ -283,8 +310,9 @@ app.post("/v1/admin/scenario-studio/scenarios/:id/update", async (request) => {
   return { ok: true, scenario: updated };
 });
 
-app.post("/v1/admin/scenario-studio/scenarios/:id/action", async (request) => {
+app.post("/v1/admin/scenario-studio/scenarios/:id/action", async (request, reply) => {
   if (!isAdminRequest(request as unknown as { headers: Record<string, unknown> })) {
+    reply.code(401);
     return { ok: false, error: "access_denied" };
   }
 
@@ -513,6 +541,7 @@ app.post("/v1/realtime/session/end", async (request) => {
 
 app.post("/v1/recordings/attempts", async (request) => {
   const body = request.body as {
+    userId?: string;
     attemptId?: string;
     sessionId: string;
     exerciseId: string;
@@ -533,6 +562,17 @@ app.post("/v1/recordings/attempts", async (request) => {
 
   const saved = saveRecordingForAttempt(body);
   return { ok: true, ...saved };
+});
+
+app.get("/v1/history/:userId", async (request) => {
+  const params = request.params as { userId: string };
+  const query = request.query as { limit?: string };
+  const limit = Number.isFinite(Number(query.limit)) ? Math.max(1, Math.min(50, Number(query.limit))) : 20;
+
+  return {
+    ok: true,
+    history: getAttemptHistoryByUser(params.userId, limit)
+  };
 });
 
 app.post("/v1/recordings/transcribe", async (request) => {

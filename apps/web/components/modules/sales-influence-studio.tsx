@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { DEFAULT_USER_ID } from "../../lib/user";
 
 type Library = {
   scenarios: Array<any>;
@@ -23,6 +24,7 @@ export function SalesInfluenceStudio({ library }: { library: Library | null }) {
   const [team, setTeam] = useState<any>();
   const [certs, setCerts] = useState<any[]>([]);
   const [progress, setProgress] = useState<any>();
+  const userIdQuery = encodeURIComponent(DEFAULT_USER_ID);
 
   const activeScenario = useMemo(() => scenarios.find((item) => item.id === activeScenarioId), [scenarios, activeScenarioId]);
 
@@ -30,7 +32,7 @@ export function SalesInfluenceStudio({ library }: { library: Library | null }) {
     const response = await fetch("/sales-influence/roleplay/start", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ userId: "user_001", scenarioId: activeScenarioId, frameworkId, mode })
+      body: JSON.stringify({ userId: DEFAULT_USER_ID, scenarioId: activeScenarioId, frameworkId, mode })
     });
     const result = await response.json();
     if (result.ok) {
@@ -59,7 +61,7 @@ export function SalesInfluenceStudio({ library }: { library: Library | null }) {
     const response = await fetch("/sales-influence/roleplay/end", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ sessionId, userId: "user_001" })
+      body: JSON.stringify({ sessionId, userId: DEFAULT_USER_ID })
     });
     const result = await response.json();
     if (result.ok) {
@@ -104,7 +106,7 @@ export function SalesInfluenceStudio({ library }: { library: Library | null }) {
   };
 
   const loadProgress = async () => {
-    const response = await fetch("/sales-influence/progress?userId=user_001");
+    const response = await fetch(`/sales-influence/progress?userId=${userIdQuery}`);
     const result = await response.json();
     if (result.ok) setProgress(result.progress);
   };
@@ -178,7 +180,7 @@ export function SalesInfluenceStudio({ library }: { library: Library | null }) {
             <button
               type="button"
               onClick={async () => {
-                await fetch("/sales-influence/pitch-bank/save", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId: "user_001", scenarioId: activeScenarioId, bestLine: report.bestLine, strongerVersion: report.suggestedStrongerVersion }) });
+                await fetch("/sales-influence/pitch-bank/save", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId: DEFAULT_USER_ID, scenarioId: activeScenarioId, bestLine: report.bestLine, strongerVersion: report.suggestedStrongerVersion }) });
               }}
               className="rounded-md border border-emerald-300 bg-white px-3 py-2 text-sm font-medium text-emerald-900"
             >
@@ -198,7 +200,7 @@ export function SalesInfluenceStudio({ library }: { library: Library | null }) {
         <article className="rounded-lg border border-slate-200 bg-white p-4">
           <h3 className="font-semibold text-slate-900">Team Conversations</h3>
           <button type="button" onClick={loadTeam} className="mt-2 rounded-md border border-slate-300 px-3 py-2 text-sm">Load team dashboard</button>
-          {team ? <pre className="mt-2 overflow-x-auto rounded-md bg-slate-50 p-2 text-xs">{JSON.stringify(team.cards, null, 2)}</pre> : <p className="mt-2 text-sm text-slate-600">Manager/team schema placeholders are ready for future multi-user auth activation.</p>}
+          {team ? <pre className="mt-2 overflow-x-auto rounded-md bg-slate-50 p-2 text-xs">{JSON.stringify(team.cards, null, 2)}</pre> : <p className="mt-2 text-sm text-slate-600">Load single-user training insights for completion, scoring, readiness, and weak-skill focus.</p>}
         </article>
 
         <article className="rounded-lg border border-slate-200 bg-white p-4">

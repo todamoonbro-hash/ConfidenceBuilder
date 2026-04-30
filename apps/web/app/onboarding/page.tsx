@@ -1,4 +1,5 @@
 import { PageHeader } from "../../components/ui/page-header";
+import { DEFAULT_USER_ID } from "../../lib/user";
 
 const GOAL_OPTIONS = ["confidence", "public_speaking", "articulation", "reading_aloud", "interviews", "executive_presence", "listening"] as const;
 
@@ -8,11 +9,11 @@ export default function OnboardingPage() {
       <PageHeader
         kicker="Setup"
         title="Your speaking profile"
-        subtitle="Help us tailor coaching to your role and goals. This baseline ensures recommendations stay specific and valuable."
+        subtitle="Takes 30 seconds — you can change anything later in Settings. This baseline keeps coaching recommendations specific and useful."
       />
 
-      <form action="/onboarding/submit" method="post" className="max-w-2xl rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <input type="hidden" name="userId" value="user_001" />
+      <form action="/onboarding/submit" method="post" className="max-w-2xl rounded-lg border border-slate-200 bg-white p-6">
+        <input type="hidden" name="userId" value={DEFAULT_USER_ID} />
 
         <div className="grid gap-5">
           {/* Primary role and goal */}
