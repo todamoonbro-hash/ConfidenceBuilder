@@ -40,7 +40,7 @@ function buildCoachReply(mode: RealtimeCoachMode, userText: string) {
       : mode === "media_practice"
         ? "Bridge to one key message and avoid speculative wording."
         : mode === "impromptu_speaking"
-          ? "Use answer → reason → example structure."
+          ? "Use answer -> reason -> example structure."
           : "Make the close specific with one measurable commitment.";
 
   return `${confidenceHint} ${brevityHint} ${modeHint} ${fillerCount > 0 ? "Also reduce filler words by pausing silently." : ""}`.trim();

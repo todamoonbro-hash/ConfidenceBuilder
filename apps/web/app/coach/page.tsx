@@ -3,7 +3,7 @@ import { PageHeader } from "../../components/ui/page-header";
 
 async function loadCoach() {
   try {
-    const response = await fetch("http://localhost:4000/v1/coach/user_001/overview", { cache: "no-store" });
+    const response = await fetch(`${process.env.API_BASE_URL ?? "http://localhost:4000"}/v1/coach/user_001/overview`, { cache: "no-store" });
     if (!response.ok) return null;
     return (await response.json()) as any;
   } catch {

@@ -190,6 +190,63 @@ export interface FeedbackItem {
   retryInstruction: string;
 }
 
+export type LlmProvider =
+  | "openai"
+  | "anthropic"
+  | "gemini"
+  | "deepseek"
+  | "mistral"
+  | "xai"
+  | "openrouter"
+  | "groq"
+  | "together"
+  | "fireworks"
+  | "local";
+
+export type AiTaskType = "realtimeCoach" | "transcription" | "tts" | "feedback" | "deepReview" | "cheapScoring" | "fallback";
+export type CostMode = "lowest_cost" | "balanced" | "best_quality";
+export type CoachStrictness = "supportive" | "balanced" | "direct" | "tough";
+
+export interface ModelPreference {
+  task: AiTaskType;
+  provider: LlmProvider;
+  model: string;
+  costMode: CostMode;
+  enabled: boolean;
+  fallbackProvider?: LlmProvider;
+  fallbackModel?: string;
+}
+
+export interface PersonalCoachProfile {
+  id: string;
+  userId: string;
+  primaryGoal: string;
+  targetSituations: string[];
+  knownWeaknesses: string[];
+  speakingIdentity: string;
+  coachStrictness: CoachStrictness;
+  weeklyPracticeMinutes: number;
+  currentRealWorldEvent?: string;
+  accentOrLanguageNotes?: string;
+  updatedAt: string;
+}
+
+export interface SessionMemory {
+  id: string;
+  userId: string;
+  attemptId?: string;
+  createdAt: string;
+  skillBranch: SkillBranch;
+  situation: string;
+  modelProvider?: LlmProvider;
+  modelName?: string;
+  transcriptSummary: string;
+  observedWeakness: string;
+  priorityFix: string;
+  nextDrill: string;
+  scoreTotal?: number;
+}
+
 export interface Badge {
   id: string;
   title: string;
@@ -301,6 +358,9 @@ export interface DatabaseSnapshot {
   dailyPlans: DailyPlan[];
   weeklyPlans: WeeklyPlan[];
   feedbackItems: FeedbackItem[];
+  personalCoachProfiles: PersonalCoachProfile[];
+  modelPreferences: ModelPreference[];
+  sessionMemories: SessionMemory[];
   badges: Badge[];
   userBadges: UserBadge[];
   quests: Quest[];

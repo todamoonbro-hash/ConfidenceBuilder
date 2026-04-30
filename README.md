@@ -38,9 +38,9 @@ Run production services:
 ## Environment variables
 The repository includes `.env.example` with placeholders for:
 - OpenAI API key and model settings (`OPENAI_API_KEY`, `OPENAI_TRANSCRIPTION_MODEL`, `OPENAI_FEEDBACK_MODEL`, `OPENAI_REALTIME_MODEL`)
-- Runtime settings (`NODE_ENV`, `API_PORT`)
+- Runtime settings (`NODE_ENV`, `API_PORT`, `PORT`, request/audio limits)
 - Database URL (`DATABASE_URL`)
-- Auth secret (`AUTH_SECRET`)
+- Auth/admin secrets (`AUTH_SECRET`, `ADMIN_API_TOKEN`, `ADMIN_UI_TOKEN`)
 - Storage provider credentials (`STORAGE_*`)
 - App/API base URLs (`APP_BASE_URL`, `API_BASE_URL`)
 
@@ -120,7 +120,7 @@ For full deployment setup (Vercel + API host, migration notes, and checklist), s
 
 ## Phase 13 realtime voice coach notes
 - Realtime Voice Coach supports live coaching modes: interview simulation, confidence check-in, quick speaking warmup, media practice, and impromptu speaking.
-- Session APIs support start → turn-by-turn conversation → end with saved transcript and generated summary.
+- Session APIs support start -> turn-by-turn conversation -> end with saved transcript and generated summary.
 - Realtime availability is detected from environment configuration; non-realtime fallback remains available and active by default.
 - Web UI supports spoken turns via browser speech recognition when available and spoken coach replies via browser speech synthesis.
 - Existing recorder and non-realtime flows remain intact as fallback.
@@ -130,6 +130,12 @@ For full deployment setup (Vercel + API host, migration notes, and checklist), s
 - Dashboard displays session streak, completed sessions, strongest/weakest area, next recommended drill, level progress, badge progress, and quest progress.
 - Weekly review generation includes what improved, what still needs work, one focus for next week, next quest recommendation, and next boss challenge recommendation.
 - Charts are intentionally simple (readable bar trend cards) for quick scan and low UI complexity.
+
+## Personal coach + cost routing notes
+- Settings now includes a Personal Coach Setup screen for goals, target situations, known weaknesses, desired speaking identity, coaching strictness, weekly practice time, and model routing.
+- Model preferences are stored by task: realtime coach, transcription, TTS, feedback, deep review, cheap scoring, and fallback.
+- Feedback generation includes the personal coach profile and recent coaching memory, then saves a new memory record with observed weakness, priority fix, next drill, score, and model used.
+- Cost-first routing currently supports OpenAI-compatible chat-completion endpoints for OpenAI, OpenRouter, DeepSeek, Mistral, xAI, Groq, Together, Fireworks, local models, and compatibility endpoints for Anthropic/Gemini when configured.
 
 ## Phase 15 level and stage progression notes
 - Progression now maps users across 10 named levels from Rookie Speaker through Elite Speaker.

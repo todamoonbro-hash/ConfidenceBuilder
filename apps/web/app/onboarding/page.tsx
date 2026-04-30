@@ -11,7 +11,7 @@ export default function OnboardingPage() {
         subtitle="Help us tailor coaching to your role and goals. This baseline ensures recommendations stay specific and valuable."
       />
 
-      <form action="/onboarding/submit" method="post" className="max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <form action="/onboarding/submit" method="post" className="max-w-2xl rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <input type="hidden" name="userId" value="user_001" />
 
         <div className="grid gap-5">
@@ -27,7 +27,7 @@ export default function OnboardingPage() {
             </label>
 
             <label className="grid gap-2">
-              <span className="text-sm font-semibold text-slate-900">Current confidence (1–10)</span>
+              <span className="text-sm font-semibold text-slate-900">Current confidence (1-10)</span>
               <input name="confidenceLevel" type="number" min={1} max={10} defaultValue={5} className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10" />
             </label>
           </div>
@@ -86,7 +86,7 @@ export default function OnboardingPage() {
         <div className="mt-6 flex gap-3">
           <button 
             type="submit" 
-            className="flex-1 rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 active:bg-slate-950 transition-colors"
+            className="flex-1 rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
           >
             Save profile and start
           </button>
@@ -99,7 +99,7 @@ export default function OnboardingPage() {
         </div>
       </form>
 
-      <div className="mt-6 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-5">
+      <div className="mt-6 rounded-lg border border-blue-200 p-5">
         <p className="text-sm text-slate-700"><span className="font-semibold text-slate-900">Why we ask:</span> This profile helps our AI coach personalize recommendations. You can update it anytime in settings.</p>
       </div>
     </>

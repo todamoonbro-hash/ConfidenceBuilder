@@ -62,7 +62,7 @@ export const INTERVIEW_QUESTIONS = {
     "What are your weaknesses?",
     "What are your salary expectations?",
     "What motivates you?",
-    "Where do you want to be in 3–5 years?"
+    "Where do you want to be in 3-5 years?"
   ],
   behavioural: [
     "Tell me about a time you led through change",

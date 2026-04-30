@@ -70,7 +70,7 @@ export function ReadingAloudLab({ passages }: ReadingAloudLabProps) {
             >
               <p className="text-sm font-medium">{passage.title}</p>
               <p className="text-xs text-slate-600">
-                {passage.mode.replace(/_/g, " ")} · {passage.difficulty} · {passage.length}
+                {passage.mode.replace(/_/g, " ")}  -  {passage.difficulty}  -  {passage.length}
               </p>
               <p className="text-xs text-slate-500">Focus: {passage.skillFocus.join(", ")}</p>
             </button>
@@ -82,7 +82,7 @@ export function ReadingAloudLab({ passages }: ReadingAloudLabProps) {
         <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
           <h3 className="text-base font-semibold text-indigo-900">{selectedPassage.title}</h3>
           <p className="mt-1 text-xs text-indigo-900">
-            Type: {selectedPassage.type} · Difficulty: {selectedPassage.difficulty} · Length: {selectedPassage.length}
+            Type: {selectedPassage.type}  -  Difficulty: {selectedPassage.difficulty}  -  Length: {selectedPassage.length}
           </p>
           <div className="mt-3 rounded-md border border-indigo-200 bg-white p-3 text-sm leading-6 text-slate-800">
             {showChunks ? (

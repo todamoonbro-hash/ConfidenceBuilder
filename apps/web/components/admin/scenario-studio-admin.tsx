@@ -64,7 +64,7 @@ const defaultScenario = {
   archived: false
 };
 
-export function ScenarioStudioAdmin({ role }: { role: string }) {
+export function ScenarioStudioAdmin({ adminUiToken }: { adminUiToken: string }) {
   const [selectedModule, setSelectedModule] = useState("networking");
   const [scenarios, setScenarios] = useState<any[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -72,7 +72,9 @@ export function ScenarioStudioAdmin({ role }: { role: string }) {
   const [testResult, setTestResult] = useState<any>(null);
 
   async function load() {
-    const response = await fetch(`/admin/scenario-studio/api/scenarios?role=${role}&module=${selectedModule}&includeArchived=true`);
+    const response = await fetch(`/admin/scenario-studio/api/scenarios?module=${selectedModule}&includeArchived=true`, {
+      headers: { "x-admin-ui-token": adminUiToken }
+    });
     const payload = await response.json();
     setScenarios(payload.scenarios ?? []);
   }
@@ -85,7 +87,7 @@ export function ScenarioStudioAdmin({ role }: { role: string }) {
 
   return (
     <section className="grid gap-4">
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <article className="rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-lg font-semibold">Scenario controls</h2>
         <div className="mt-2 flex flex-wrap gap-2">
           <select className="rounded-md border border-slate-300 px-2 py-1" value={selectedModule} onChange={(event: { target: { value: string } }) => setSelectedModule(event.target.value)}>
@@ -97,19 +99,19 @@ export function ScenarioStudioAdmin({ role }: { role: string }) {
       </article>
 
       <div className="grid gap-4 lg:grid-cols-[1.1fr,1.9fr]">
-        <article className="rounded-2xl border border-slate-200 bg-white p-4">
+        <article className="rounded-lg border border-slate-200 bg-white p-4">
           <h3 className="font-semibold">Existing scenarios</h3>
           <div className="mt-2 grid gap-2 text-sm">
             {scenarios.map((scenario) => (
               <button key={scenario.id} onClick={() => { setSelectedId(scenario.id); setForm(scenario); }} className="rounded-lg border border-slate-200 p-2 text-left">
                 <p className="font-semibold">{scenario.title}</p>
-                <p className="text-xs text-slate-600">{scenario.category} · {scenario.difficulty} · {scenario.published ? "published" : "draft"}</p>
+                <p className="text-xs text-slate-600">{scenario.category}  -  {scenario.difficulty}  -  {scenario.published ? "published" : "draft"}</p>
               </button>
             ))}
           </div>
         </article>
 
-        <article className="rounded-2xl border border-slate-200 bg-white p-4">
+        <article className="rounded-lg border border-slate-200 bg-white p-4">
           <h3 className="font-semibold">Scenario builder</h3>
           <div className="mt-3 grid gap-2 md:grid-cols-2">
             <input className="rounded-md border border-slate-300 px-2 py-1 text-sm" value={form.title} onChange={(event: { target: { value: string } }) => setForm({ ...form, title: event.target.value })} placeholder="title" />
@@ -128,7 +130,7 @@ export function ScenarioStudioAdmin({ role }: { role: string }) {
               const payload = selectedId ? { ...form, id: selectedId } : form;
               await fetch("/admin/scenario-studio/api/scenarios", {
                 method,
-                headers: { "content-type": "application/json", "x-user-role": role },
+                headers: { "content-type": "application/json", "x-admin-ui-token": adminUiToken },
                 body: JSON.stringify(payload)
               });
               await load();
@@ -137,7 +139,7 @@ export function ScenarioStudioAdmin({ role }: { role: string }) {
             {selectedId ? <button className="rounded-md border border-slate-300 px-3 py-1" onClick={async () => {
               await fetch(`/admin/scenario-studio/api/scenarios/${selectedId}/action`, {
                 method: "POST",
-                headers: { "content-type": "application/json", "x-user-role": role },
+                headers: { "content-type": "application/json", "x-admin-ui-token": adminUiToken },
                 body: JSON.stringify({ action: "duplicate" })
               });
               await load();
@@ -146,7 +148,7 @@ export function ScenarioStudioAdmin({ role }: { role: string }) {
             {selectedId ? <button className="rounded-md border border-slate-300 px-3 py-1" onClick={async () => {
               await fetch(`/admin/scenario-studio/api/scenarios/${selectedId}/action`, {
                 method: "POST",
-                headers: { "content-type": "application/json", "x-user-role": role },
+                headers: { "content-type": "application/json", "x-admin-ui-token": adminUiToken },
                 body: JSON.stringify({ action: selected?.published ? "unpublish" : "publish" })
               });
               await load();
@@ -155,7 +157,7 @@ export function ScenarioStudioAdmin({ role }: { role: string }) {
             {selectedId ? <button className="rounded-md border border-rose-300 px-3 py-1 text-rose-700" onClick={async () => {
               await fetch(`/admin/scenario-studio/api/scenarios/${selectedId}/action`, {
                 method: "POST",
-                headers: { "content-type": "application/json", "x-user-role": role },
+                headers: { "content-type": "application/json", "x-admin-ui-token": adminUiToken },
                 body: JSON.stringify({ action: "archive" })
               });
               await load();
@@ -164,7 +166,7 @@ export function ScenarioStudioAdmin({ role }: { role: string }) {
             {selectedId ? <button className="rounded-md border border-emerald-300 px-3 py-1 text-emerald-700" onClick={async () => {
               const response = await fetch(`/admin/scenario-studio/api/scenarios/${selectedId}/action`, {
                 method: "POST",
-                headers: { "content-type": "application/json", "x-user-role": role },
+                headers: { "content-type": "application/json", "x-admin-ui-token": adminUiToken },
                 body: JSON.stringify({ action: "test" })
               });
               setTestResult(await response.json());

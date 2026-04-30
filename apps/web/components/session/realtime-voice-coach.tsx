@@ -121,7 +121,7 @@ export function RealtimeVoiceCoach({ userId = "user_001" }: { userId?: string })
   };
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4">
+    <section className="rounded-lg border border-slate-200 bg-white p-4">
       <h2 className="text-lg font-semibold text-slate-900">Realtime Voice Coach</h2>
       <p className="mt-1 text-sm text-slate-900">Live conversation practice. If realtime is unavailable, continue with turn-based coaching and recorder flow.</p>
 
@@ -159,7 +159,7 @@ export function RealtimeVoiceCoach({ userId = "user_001" }: { userId?: string })
       </div>
 
       <p className="mt-2 text-xs text-slate-900">
-        Realtime capability: {realtimeAvailable ? "available" : "fallback mode"} · Browser speech: {supportsBrowserSpeech ? "available" : "unavailable"}
+        Realtime capability: {realtimeAvailable ? "available" : "fallback mode"}  -  Browser speech: {supportsBrowserSpeech ? "available" : "unavailable"}
       </p>
 
       {error ? <p className="mt-2 text-sm text-red-700">{error}</p> : null}

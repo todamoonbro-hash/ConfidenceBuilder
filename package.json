@@ -6,12 +6,24 @@
     "apps/*",
     "packages/*"
   ],
+  "devDependencies": {
+    "postcss": "8.5.12"
+  },
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "dev": "npm run dev --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present"
+  },
+  "overrides": {
+    "postcss": "8.5.12",
+    "next@16.2.4": {
+      "postcss": "8.5.12"
+    },
+    "tailwindcss": {
+      "postcss": "8.5.12"
+    }
   },
   "engines": {
     "node": ">=20.0.0"

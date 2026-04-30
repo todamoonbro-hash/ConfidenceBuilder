@@ -191,7 +191,7 @@ export function evaluateReadAloudAttempt(input: { passage: ReadingPassage; trans
       pauses: pauseControlScore >= 75 ? "Pauses were controlled and helped structure meaning." : "Add short pauses at punctuation to improve clarity.",
       fluency: comparison.accuracyScore >= 80 ? "Fluency was stable with strong source-text alignment." : "Fluency dipped with skips/substitutions; prioritize line-by-line accuracy first.",
       expression: input.passage.mode === "story_narrative_reading" ? "Use voice contrast on emotional words to strengthen narrative delivery." : "Use emphasis on key business terms to improve executive clarity.",
-      recovery: comparison.substitutions.length <= 2 ? "Recovery after slips was solid—keep moving without restarting." : "When mistakes happen, quickly recover to the next phrase instead of stopping."
+      recovery: comparison.substitutions.length <= 2 ? "Recovery after slips was solid-keep moving without restarting." : "When mistakes happen, quickly recover to the next phrase instead of stopping."
     }
   };
 }

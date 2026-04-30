@@ -5,6 +5,7 @@ export async function transcribeAudio(payload: {
 }): Promise<{ text: string }> {
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_TRANSCRIPTION_MODEL || "gpt-4o-mini-transcribe";
+  const timeoutMs = Number(process.env.OPENAI_TIMEOUT_MS ?? "30000");
 
   if (!apiKey) {
     throw new Error("missing_openai_api_key");
@@ -21,7 +22,8 @@ export async function transcribeAudio(payload: {
     headers: {
       Authorization: `Bearer ${apiKey}`
     },
-    body: formData
+    body: formData,
+    signal: AbortSignal.timeout(timeoutMs)
   });
 
   if (!response.ok) {

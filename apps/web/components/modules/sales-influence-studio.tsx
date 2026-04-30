@@ -111,26 +111,26 @@ export function SalesInfluenceStudio({ library }: { library: Library | null }) {
 
   return (
     <section className="grid gap-4">
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <article className="rounded-lg border border-slate-200 bg-white p-4">
         <p className="text-xs uppercase tracking-wide text-slate-500">Ethics</p>
         <p className="mt-1 text-sm text-slate-700">{library?.ethicsNotice ?? "Training and preparation only."}</p>
       </article>
 
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <article className="rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-lg font-semibold text-slate-900">Scenario library</h2>
         <p className="mt-1 text-sm text-slate-600">Sub-sections: Pitch Practice, Discovery Call, Objection Handling, Investor Pitch, Product Demo, Negotiation, Team Conversations, Certification, Progress.</p>
         <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {scenarios.map((scenario) => (
             <button key={scenario.id} type="button" onClick={() => setActiveScenarioId(scenario.id)} className={`rounded-xl border p-3 text-left ${activeScenarioId === scenario.id ? "border-slate-900 bg-slate-50" : "border-slate-200"}`}>
               <p className="text-sm font-semibold text-slate-900">{scenario.title}</p>
-              <p className="mt-1 text-xs text-slate-600">{scenario.category} · {scenario.difficultyLevel} · {scenario.estimatedDurationMinutes} min</p>
+              <p className="mt-1 text-xs text-slate-600">{scenario.category}  -  {scenario.difficultyLevel}  -  {scenario.estimatedDurationMinutes} min</p>
               <p className="mt-2 text-xs text-slate-500">{scenario.scenarioBrief}</p>
             </button>
           ))}
         </div>
       </article>
 
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <article className="rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-lg font-semibold text-slate-900">Roleplay</h2>
         <div className="mt-3 grid gap-3 md:grid-cols-3">
           <label className="text-sm">Framework
@@ -165,9 +165,9 @@ export function SalesInfluenceStudio({ library }: { library: Library | null }) {
       </article>
 
       {report ? (
-        <article className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+        <article className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
           <h2 className="text-lg font-semibold">Feedback report</h2>
-          <p className="mt-1">Overall score: {report.overallScore} · XP earned: {report.xpEarned} · Framework compliance: {report.frameworkComplianceScore}</p>
+          <p className="mt-1">Overall score: {report.overallScore}  -  XP earned: {report.xpEarned}  -  Framework compliance: {report.frameworkComplianceScore}</p>
           <p className="mt-1">Top strengths: {(report.topStrengths ?? []).join(", ")}</p>
           <p className="mt-1">Top weaknesses: {(report.topWeaknesses ?? []).join(", ")}</p>
           <p className="mt-1">Best line: {report.bestLine}</p>
@@ -188,20 +188,20 @@ export function SalesInfluenceStudio({ library }: { library: Library | null }) {
         </article>
       ) : null}
 
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <article className="rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-lg font-semibold text-slate-900">Pitch Builder</h2>
         <button type="button" onClick={generatePitch} className="mt-2 rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white">Generate pitch variants</button>
         {pitchResult ? <pre className="mt-3 overflow-x-auto rounded-md bg-slate-50 p-3 text-xs text-slate-700">{JSON.stringify(pitchResult, null, 2)}</pre> : null}
       </article>
 
       <section className="grid gap-4 lg:grid-cols-3">
-        <article className="rounded-2xl border border-slate-200 bg-white p-4">
+        <article className="rounded-lg border border-slate-200 bg-white p-4">
           <h3 className="font-semibold text-slate-900">Team Conversations</h3>
           <button type="button" onClick={loadTeam} className="mt-2 rounded-md border border-slate-300 px-3 py-2 text-sm">Load team dashboard</button>
           {team ? <pre className="mt-2 overflow-x-auto rounded-md bg-slate-50 p-2 text-xs">{JSON.stringify(team.cards, null, 2)}</pre> : <p className="mt-2 text-sm text-slate-600">Manager/team schema placeholders are ready for future multi-user auth activation.</p>}
         </article>
 
-        <article className="rounded-2xl border border-slate-200 bg-white p-4">
+        <article className="rounded-lg border border-slate-200 bg-white p-4">
           <h3 className="font-semibold text-slate-900">Certification</h3>
           <button type="button" onClick={loadCerts} className="mt-2 rounded-md border border-slate-300 px-3 py-2 text-sm">Load tracks</button>
           <ul className="mt-2 space-y-1 text-sm text-slate-700">
@@ -209,10 +209,10 @@ export function SalesInfluenceStudio({ library }: { library: Library | null }) {
           </ul>
         </article>
 
-        <article className="rounded-2xl border border-slate-200 bg-white p-4">
+        <article className="rounded-lg border border-slate-200 bg-white p-4">
           <h3 className="font-semibold text-slate-900">Progress</h3>
           <button type="button" onClick={loadProgress} className="mt-2 rounded-md border border-slate-300 px-3 py-2 text-sm">Refresh progress</button>
-          {progress ? <p className="mt-2 text-sm text-slate-700">Level {progress.level} · XP {progress.overallXp}</p> : <p className="mt-2 text-sm text-slate-600">No progress yet.</p>}
+          {progress ? <p className="mt-2 text-sm text-slate-700">Level {progress.level}  -  XP {progress.overallXp}</p> : <p className="mt-2 text-sm text-slate-600">No progress yet.</p>}
         </article>
       </section>
     </section>

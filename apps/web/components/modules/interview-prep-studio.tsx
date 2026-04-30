@@ -16,13 +16,13 @@ export function InterviewPrepStudio({ library }: { library: any }) {
 
   return (
     <section className="grid gap-4">
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <article className="rounded-lg border border-slate-200 bg-white p-4">
         <p className="text-xs uppercase tracking-wide text-slate-500">Ethics</p>
         <p className="mt-1 text-sm text-slate-700">{library?.ethicsNotice}</p>
         <p className="mt-1 text-xs text-slate-600">No hidden live interview assistance or stealth mode is provided.</p>
       </article>
 
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <article className="rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-lg font-semibold">Role Setup</h2>
         <p className="text-sm text-slate-600">Sub-sections: Role Setup, Story Bank, Mock Interview, Behavioural, Technical/Role, Executive, Pressure, Feedback Reports, Interview Plan.</p>
         <button
@@ -57,7 +57,7 @@ export function InterviewPrepStudio({ library }: { library: any }) {
         {setupSaved ? <pre className="mt-2 overflow-x-auto rounded-md bg-slate-50 p-2 text-xs">{JSON.stringify(setupSaved.generated, null, 2)}</pre> : null}
       </article>
 
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <article className="rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-lg font-semibold">Story Bank</h2>
         <div className="mt-2 flex gap-2">
           <button
@@ -97,7 +97,7 @@ export function InterviewPrepStudio({ library }: { library: any }) {
         <p className="mt-2 text-sm text-slate-700">Stories saved: {stories.length}</p>
       </article>
 
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <article className="rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-lg font-semibold">Mock Interview</h2>
         <div className="mt-2 flex flex-wrap gap-2">
           <button type="button" className="rounded-md bg-slate-900 px-3 py-2 text-sm text-white" onClick={async () => {
@@ -134,9 +134,9 @@ export function InterviewPrepStudio({ library }: { library: any }) {
         </div>
       </article>
 
-      {report ? <article className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+      {report ? <article className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
         <h2 className="text-lg font-semibold">Feedback Reports</h2>
-        <p>Readiness: {report.overallReadinessScore} · Hireability: {report.hireabilitySignal}</p>
+        <p>Readiness: {report.overallReadinessScore}  -  Hireability: {report.hireabilitySignal}</p>
         <p>Top strengths: {(report.topStrengths ?? []).join(", ")}</p>
         <p>Top risks: {(report.topRisks ?? []).join(", ")}</p>
         <p>Best answer: {report.bestAnswer}</p>
@@ -144,7 +144,7 @@ export function InterviewPrepStudio({ library }: { library: any }) {
       </article> : null}
 
       <section className="grid gap-4 md:grid-cols-2">
-        <article className="rounded-2xl border border-slate-200 bg-white p-4">
+        <article className="rounded-lg border border-slate-200 bg-white p-4">
           <h3 className="font-semibold">Answer Builder</h3>
           <button type="button" className="mt-2 rounded-md border border-slate-300 px-3 py-2 text-sm" onClick={async () => {
             const response = await fetch("/interview-prep/answer-builder", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question: "Why this role?", rawAnswer: "I enjoy leading high-impact transformation work." }) });
@@ -154,7 +154,7 @@ export function InterviewPrepStudio({ library }: { library: any }) {
           {variants ? <pre className="mt-2 overflow-x-auto rounded-md bg-slate-50 p-2 text-xs">{JSON.stringify(variants, null, 2)}</pre> : null}
         </article>
 
-        <article className="rounded-2xl border border-slate-200 bg-white p-4">
+        <article className="rounded-lg border border-slate-200 bg-white p-4">
           <h3 className="font-semibold">Personal Positioning</h3>
           <button type="button" className="mt-2 rounded-md border border-slate-300 px-3 py-2 text-sm" onClick={async () => {
             const response = await fetch("/interview-prep/positioning", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(setupSaved?.setup ?? {
@@ -168,7 +168,7 @@ export function InterviewPrepStudio({ library }: { library: any }) {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
-        <article className="rounded-2xl border border-slate-200 bg-white p-4">
+        <article className="rounded-lg border border-slate-200 bg-white p-4">
           <h3 className="font-semibold">Interview Plan</h3>
           <button type="button" className="mt-2 rounded-md border border-slate-300 px-3 py-2 text-sm" onClick={async () => {
             const response = await fetch("/interview-prep/plan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId: "user_001", interviewDate: "2026-06-20", roleTitle: "VP Finance" }) });
@@ -178,7 +178,7 @@ export function InterviewPrepStudio({ library }: { library: any }) {
           {plan ? <pre className="mt-2 overflow-x-auto rounded-md bg-slate-50 p-2 text-xs">{JSON.stringify(plan, null, 2)}</pre> : null}
         </article>
 
-        <article className="rounded-2xl border border-slate-200 bg-white p-4">
+        <article className="rounded-lg border border-slate-200 bg-white p-4">
           <h3 className="font-semibold">Post-Interview Reflection</h3>
           <button type="button" className="mt-2 rounded-md border border-slate-300 px-3 py-2 text-sm" onClick={async () => {
             await fetch("/interview-prep/reflection", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ userId: "user_001", questionsAsked: ["Why this role?"], answersWentWell: ["positioning"], answersFailed: ["weakness answer"], objectionsConcerns: ["industry depth"], followUpRequired: "share KPI example", improvementsNextTime: "more concise", requestFollowUpEmail: true }) });

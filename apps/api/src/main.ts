@@ -5,23 +5,30 @@ import {
   getDatabase,
   getGameProgressByUser,
   getMediaKeyMessagesByUser,
+  getModelPreferenceForTask,
+  getModelPreferences,
   getOverview,
+  getPersonalCoachProfileByUser,
   getQuestStatusForUser,
+  getSessionMemoriesByUser,
   getTranscriptByAttemptId,
   getTrainingProfileByUser,
   getAttemptById,
   saveGameProgress,
   saveFeedbackForAttempt,
   saveMediaKeyMessages,
+  saveModelPreferences,
   saveOnboardingPreferences,
+  savePersonalCoachProfile,
   saveRecordingForAttempt,
   saveScoreForAttempt,
+  saveSessionMemory,
   saveTranscriptForAttempt,
   saveUnlockedBadges,
   saveUserQuestProgress,
   startQuest
 } from "./db/store";
-import type { OnboardingPreferences, SkillBranch } from "./db/types";
+import type { AiTaskType, CostMode, LlmProvider, ModelPreference, OnboardingPreferences, SkillBranch } from "./db/types";
 import { findUnlockableBadges } from "./services/badge-unlock-service";
 import { scoreArticulationHeuristic } from "./services/articulation-heuristic-service";
 import { findArticulationDrill, listArticulationDrills } from "./services/articulation-drills-service";
@@ -62,12 +69,40 @@ import { createScenarioDefinition, duplicateScenarioDefinition, listPublishedSce
 
 
 
-const app = Fastify({ logger: true });
+const DEFAULT_BODY_LIMIT_BYTES = 10 * 1024 * 1024;
+const MAX_AUDIO_BYTES = Number(process.env.MAX_AUDIO_BYTES ?? 8 * 1024 * 1024);
+const VALID_LLM_PROVIDERS: LlmProvider[] = ["openai", "anthropic", "gemini", "deepseek", "mistral", "xai", "openrouter", "groq", "together", "fireworks", "local"];
+const VALID_AI_TASKS: AiTaskType[] = ["realtimeCoach", "transcription", "tts", "feedback", "deepReview", "cheapScoring", "fallback"];
+const VALID_COST_MODES: CostMode[] = ["lowest_cost", "balanced", "best_quality"];
+const VALID_COACH_STRICTNESS = ["supportive", "balanced", "direct", "tough"] as const;
 
+const app = Fastify({
+  logger: true,
+  bodyLimit: Number(process.env.MAX_JSON_BODY_BYTES ?? DEFAULT_BODY_LIMIT_BYTES)
+});
+
+
+function isValidOption<T extends string>(value: unknown, options: readonly T[]): value is T {
+  return typeof value === "string" && options.includes(value as T);
+}
+
+function cleanText(value: unknown, fallback: string) {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function cleanStringList(value: unknown, fallback: string[], limit: number) {
+  const items = Array.isArray(value) ? value : fallback;
+  return items
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, limit);
+}
 
 function isAdminRequest(request: { headers: Record<string, unknown> }) {
-  const role = String(request.headers["x-user-role"] ?? "").toLowerCase();
-  return role === "admin";
+  const configuredToken = process.env.ADMIN_API_TOKEN;
+  const providedToken = String(request.headers["x-admin-token"] ?? "");
+  return Boolean(configuredToken && providedToken && providedToken === configuredToken);
 }
 
 app.get("/health", async () => ({ status: "ok", service: "confidencebuilder-api", date: new Date().toISOString() }));
@@ -267,7 +302,77 @@ app.post("/v1/admin/scenario-studio/scenarios/:id/action", async (request) => {
 app.get("/v1/coach/:userId/overview", async (request) => {
   const params = request.params as { userId: string };
   const overview = buildAdaptiveCoachOverview(getDatabase(), params.userId);
-  return { ok: true, coach: overview };
+  return {
+    ok: true,
+    coach: overview,
+    personalProfile: getPersonalCoachProfileByUser(params.userId),
+    modelPreferences: getModelPreferences(),
+    recentMemory: getSessionMemoriesByUser(params.userId, 6)
+  };
+});
+
+app.get("/v1/coach/:userId/personalization", async (request) => {
+  const params = request.params as { userId: string };
+  return {
+    ok: true,
+    personalProfile: getPersonalCoachProfileByUser(params.userId),
+    modelPreferences: getModelPreferences(),
+    recentMemory: getSessionMemoriesByUser(params.userId, 10)
+  };
+});
+
+app.post("/v1/coach/:userId/personalization", async (request) => {
+  const params = request.params as { userId: string };
+  const body = request.body as {
+    personalProfile?: Record<string, unknown>;
+    modelPreferences?: ReturnType<typeof getModelPreferences>;
+  };
+  const existingProfile = getPersonalCoachProfileByUser(params.userId);
+
+  const personalProfile = body.personalProfile
+    ? savePersonalCoachProfile({
+        userId: params.userId,
+        primaryGoal: cleanText(body.personalProfile.primaryGoal, existingProfile?.primaryGoal ?? "Become clearer and more confident in high-stakes conversations."),
+        targetSituations: cleanStringList(body.personalProfile.targetSituations, existingProfile?.targetSituations ?? [], 8),
+        knownWeaknesses: cleanStringList(body.personalProfile.knownWeaknesses, existingProfile?.knownWeaknesses ?? [], 8),
+        speakingIdentity: cleanText(body.personalProfile.speakingIdentity, existingProfile?.speakingIdentity ?? "Clear, calm, concise speaker"),
+        coachStrictness: isValidOption(body.personalProfile.coachStrictness, VALID_COACH_STRICTNESS)
+          ? body.personalProfile.coachStrictness
+          : existingProfile?.coachStrictness ?? "direct",
+        weeklyPracticeMinutes: Math.max(5, Math.min(600, Number(body.personalProfile.weeklyPracticeMinutes) || existingProfile?.weeklyPracticeMinutes || 100)),
+        currentRealWorldEvent: cleanText(body.personalProfile.currentRealWorldEvent, existingProfile?.currentRealWorldEvent ?? ""),
+        accentOrLanguageNotes: cleanText(body.personalProfile.accentOrLanguageNotes, existingProfile?.accentOrLanguageNotes ?? "")
+      })
+    : getPersonalCoachProfileByUser(params.userId);
+
+  const existingPreferences = getModelPreferences();
+  const incomingPreferences: ModelPreference[] = Array.isArray(body.modelPreferences)
+    ? body.modelPreferences
+        .reduce<ModelPreference[]>((preferences, preference) => {
+          const existing = existingPreferences.find((item) => item.task === preference.task);
+          if (!isValidOption(preference.task, VALID_AI_TASKS)) return preferences;
+          const sanitized: ModelPreference = {
+            task: preference.task,
+            provider: isValidOption(preference.provider, VALID_LLM_PROVIDERS) ? preference.provider : existing?.provider ?? "openai",
+            model: cleanText(preference.model, existing?.model ?? "gpt-4.1-mini"),
+            costMode: isValidOption(preference.costMode, VALID_COST_MODES) ? preference.costMode : existing?.costMode ?? "lowest_cost",
+            enabled: preference.enabled !== false
+          };
+          const fallbackProvider = isValidOption(preference.fallbackProvider, VALID_LLM_PROVIDERS) ? preference.fallbackProvider : existing?.fallbackProvider;
+          const fallbackModel = typeof preference.fallbackModel === "string" && preference.fallbackModel.trim() ? preference.fallbackModel.trim() : existing?.fallbackModel;
+          if (fallbackProvider) sanitized.fallbackProvider = fallbackProvider;
+          if (fallbackModel) sanitized.fallbackModel = fallbackModel;
+          return [...preferences, sanitized];
+        }, [])
+    : [];
+  const modelPreferences = incomingPreferences.length > 0
+    ? saveModelPreferences([
+        ...existingPreferences.map((existing) => incomingPreferences.find((preference) => preference.task === existing.task) ?? existing),
+        ...incomingPreferences.filter((preference) => !existingPreferences.some((existing) => existing.task === preference.task))
+      ])
+    : existingPreferences;
+
+  return { ok: true, personalProfile, modelPreferences, recentMemory: getSessionMemoriesByUser(params.userId, 10) };
 });
 
 app.get("/v1/dashboard/:userId", async (request) => {
@@ -450,6 +555,10 @@ app.post("/v1/recordings/transcribe", async (request) => {
       return { ok: false, error: "empty_audio_payload" };
     }
 
+    if (audioBuffer.length > MAX_AUDIO_BYTES) {
+      return { ok: false, error: "audio_payload_too_large", maxBytes: MAX_AUDIO_BYTES };
+    }
+
     const result = await transcribeAudio({
       audioBuffer,
       mimeType: body.mimeType || "audio/webm",
@@ -492,6 +601,9 @@ app.post("/v1/attempts/:attemptId/feedback/generate", async (request) => {
   const profile = getTrainingProfileByUser(body.userId);
   const activeQuest = getActiveQuestByUser(body.userId);
   const previousFeedback = [...db.feedbackItems].reverse()[0];
+  const personalContext = getPersonalCoachProfileByUser(body.userId);
+  const recentMemory = getSessionMemoriesByUser(body.userId, 5);
+  const modelPreference = getModelPreferenceForTask("feedback");
 
   const userGoals = db.goals.filter((goal) => goal.userId === body.userId).map((goal) => goal.focusArea);
 
@@ -504,7 +616,10 @@ app.post("/v1/attempts/:attemptId/feedback/generate", async (request) => {
       previousWeakness: previousFeedback?.whatWeakened,
       activeQuest: activeQuest.quest?.title,
       skillBranch: body.skillBranch ?? activeQuest.quest?.targetSkill ?? "confidence",
-      difficultyLevel: progress?.currentDifficulty ?? "Easy"
+      difficultyLevel: progress?.currentDifficulty ?? "Easy",
+      personalContext,
+      recentMemory,
+      modelPreference
     });
 
     const feedbackItem = saveFeedbackForAttempt({
@@ -559,10 +674,28 @@ app.post("/v1/attempts/:attemptId/feedback/generate", async (request) => {
       }
     });
 
-    return { ok: true, feedback: feedbackItem, score };
+    const memory = saveSessionMemory({
+      userId: body.userId,
+      attemptId: attempt.id,
+      skillBranch: body.skillBranch ?? activeQuest.quest?.targetSkill ?? "confidence",
+      situation: exercise?.title ?? exercise?.drillType ?? "speaking practice",
+      modelProvider: modelPreference?.provider,
+      modelName: modelPreference?.model,
+      transcriptSummary: transcript.content.split(/\s+/).slice(0, 24).join(" "),
+      observedWeakness: feedback.whatWeakened,
+      priorityFix: feedback.priorityFix,
+      nextDrill: feedback.retryInstruction,
+      scoreTotal: total
+    });
+
+    return { ok: true, feedback: feedbackItem, score, memory, modelPreference };
   } catch (error) {
-    if (error instanceof Error && error.message === "missing_openai_api_key") {
+    if (error instanceof Error && (error.message === "missing_openai_api_key" || error.message.startsWith("missing_provider_api_key"))) {
       return { ok: false, error: "feedback_not_configured" };
+    }
+
+    if (error instanceof Error && error.message.startsWith("provider_not_configured")) {
+      return { ok: false, error: "feedback_provider_not_configured" };
     }
 
     if (error instanceof Error && error.message.includes("JSON")) {
@@ -1485,7 +1618,8 @@ app.get("/v1/training/profile/:userId", async (request) => {
 });
 
 const start = async () => {
-  await app.listen({ host: "0.0.0.0", port: 4000 });
+  const port = Number(process.env.PORT ?? process.env.API_PORT ?? "4000");
+  await app.listen({ host: "0.0.0.0", port });
 };
 
 void start();

@@ -15,7 +15,7 @@ export default function GlobalError({
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 to-white p-6 max-w-md shadow-sm">
+      <div className="rounded-lg border border-red-200 p-6 max-w-md shadow-sm">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-red-100">
             <span className="text-lg font-bold text-red-600">!</span>

@@ -3,7 +3,7 @@ import { InterviewPrepStudio } from "../../components/modules/interview-prep-stu
 
 async function loadLibrary() {
   try {
-    const response = await fetch("http://localhost:4000/v1/interview/library", { cache: "no-store" });
+    const response = await fetch(`${process.env.API_BASE_URL ?? "http://localhost:4000"}/v1/interview/library`, { cache: "no-store" });
     if (!response.ok) return null;
     return (await response.json()) as any;
   } catch {

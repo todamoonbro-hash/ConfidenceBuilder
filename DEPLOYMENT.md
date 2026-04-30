@@ -33,8 +33,11 @@ Use `.env.example` as the source of truth and copy values into environment confi
 | `OPENAI_TRANSCRIPTION_MODEL` | API | No | Transcription model name |
 | `OPENAI_FEEDBACK_MODEL` | API | No | Feedback model name |
 | `OPENAI_REALTIME_MODEL` | API | No | Enables realtime-availability branch |
+| `OPENAI_TIMEOUT_MS` | API | Recommended | Timeout for OpenAI transcription/feedback requests |
 | `DATABASE_URL` | Future DB adapter | No (current in-memory mode) | Planned Postgres connection string |
 | `AUTH_SECRET` | Future auth hardening | Recommended | Secret for auth/session infrastructure |
+| `ADMIN_API_TOKEN` | API + Web | Required for admin tools | Server-to-server token for Scenario Studio admin APIs |
+| `ADMIN_UI_TOKEN` | Web | Required for admin tools | Token required to open Scenario Studio admin UI |
 | `STORAGE_PROVIDER` | Future storage adapter | Optional | Storage backend selector |
 | `STORAGE_BUCKET` | Future storage adapter | Optional | Bucket/container name |
 | `STORAGE_REGION` | Future storage adapter | Optional | Storage region |
@@ -44,6 +47,9 @@ Use `.env.example` as the source of truth and copy values into environment confi
 | `API_BASE_URL` | Web route handlers | Recommended | Public API base URL |
 | `NODE_ENV` | API/Web runtime | Recommended | Runtime mode |
 | `API_PORT` | API | Optional | API listen port (default `4000`) |
+| `PORT` | API host | Optional | Platform-provided port; takes priority over `API_PORT` |
+| `MAX_JSON_BODY_BYTES` | API | Optional | Fastify JSON body limit |
+| `MAX_AUDIO_BYTES` | API | Optional | Decoded audio payload limit before transcription |
 
 > Security: Do **not** expose server secrets to browser bundles. Keep secrets in server runtime only.
 
@@ -65,6 +71,7 @@ Recommended setup:
 5. Add env vars in Vercel Project Settings:
    - `API_BASE_URL` (must point to your deployed API origin)
    - `APP_BASE_URL` (public web URL)
+   - `ADMIN_UI_TOKEN` and `ADMIN_API_TOKEN` only if deploying admin tools
 6. Deploy.
 
 ### API host (Fastify)
@@ -72,7 +79,7 @@ Recommended setup:
 1. Build command: `npm run build -w @confidencebuilder/api`
 2. Start command: `npm run start -w @confidencebuilder/api`
 3. Set runtime env vars (OpenAI + URLs + optional port).
-4. Ensure inbound traffic allows configured port / platform port binding.
+4. Ensure inbound traffic allows configured port / platform port binding. The API uses `PORT` first, then `API_PORT`, then `4000`.
 
 ---
 
@@ -114,4 +121,6 @@ Web app code (`apps/web/**`) contains no direct OpenAI client usage.
 - [ ] `.env.example` reviewed and host env configured
 - [ ] `API_BASE_URL` points to deployed API
 - [ ] Secrets are server-side only
+- [ ] `ADMIN_API_TOKEN` and `ADMIN_UI_TOKEN` are long random values if admin tools are enabled
+- [ ] Audio/body limits are configured for your hosting plan
 - [ ] Health check returns OK: `GET /health`

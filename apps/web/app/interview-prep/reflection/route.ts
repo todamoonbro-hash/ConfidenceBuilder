@@ -1,6 +1,6 @@
 export async function POST(request: Request) {
   const body = await request.json();
-  const response = await fetch("http://localhost:4000/v1/interview/reflection", {
+  const response = await fetch(`${process.env.API_BASE_URL ?? "http://localhost:4000"}/v1/interview/reflection`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body)

@@ -86,7 +86,7 @@ export function ImpromptuSpeakingLab() {
           skillBranch="impromptu"
           initialSessionId="sess_001"
           initialExerciseId={`impromptu_${category}`}
-          drillInstruction="Answer the prompt directly. Use answer → reason → example."
+          drillInstruction="Answer the prompt directly. Use answer -> reason -> example."
           drillExamplePhrase={prompt}
           drillTargetFocus="clarity, structure, confidence"
           drillDifficultyLevel="Pressure"

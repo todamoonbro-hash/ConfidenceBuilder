@@ -11,7 +11,7 @@ declare module "fastify" {
   }
 
   interface FastifyFactory {
-    (options?: { logger?: boolean }): FastifyInstance;
+    (options?: { logger?: boolean; bodyLimit?: number }): FastifyInstance;
   }
 
   const Fastify: FastifyFactory;

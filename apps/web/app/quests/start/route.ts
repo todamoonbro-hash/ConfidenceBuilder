@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   const questId = String(formData.get("questId") ?? "");
 
   if (questId) {
-    await fetch(`http://localhost:4000/v1/quests/${questId}/start`, {
+    await fetch(`${process.env.API_BASE_URL ?? "http://localhost:4000"}/v1/quests/${questId}/start`, {
       method: "POST",
       headers: {
         "content-type": "application/json"

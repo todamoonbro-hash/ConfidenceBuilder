@@ -3,7 +3,7 @@ import { SalesInfluenceStudio } from "../../components/modules/sales-influence-s
 
 async function loadLibrary() {
   try {
-    const response = await fetch("http://localhost:4000/v1/sales-influence/library", { cache: "no-store" });
+    const response = await fetch(`${process.env.API_BASE_URL ?? "http://localhost:4000"}/v1/sales-influence/library`, { cache: "no-store" });
     if (!response.ok) return null;
     return (await response.json()) as any;
   } catch {

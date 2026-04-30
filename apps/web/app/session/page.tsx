@@ -12,7 +12,7 @@ export default function DailySessionPage() {
       />
 
       {/* Session flow guide */}
-      <section className="mb-6 rounded-2xl border border-slate-200 bg-gradient-to-br from-blue-50 to-white p-5 shadow-sm">
+      <section className="mb-6 rounded-lg border border-slate-200 p-5 shadow-sm">
         <div className="grid gap-4 md:grid-cols-4">
           <div className="flex gap-3">
             <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">1</div>

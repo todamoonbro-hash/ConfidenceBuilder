@@ -1,7 +1,7 @@
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get("userId") ?? "user_001";
-  const response = await fetch(`http://localhost:4000/v1/modules/media/key-messages/${encodeURIComponent(userId)}`, {
+  const response = await fetch(`${process.env.API_BASE_URL ?? "http://localhost:4000"}/v1/modules/media/key-messages/${encodeURIComponent(userId)}`, {
     cache: "no-store"
   });
   const body = await response.json();
@@ -10,7 +10,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const payload = await request.json();
-  const response = await fetch("http://localhost:4000/v1/modules/media/key-messages", {
+  const response = await fetch(`${process.env.API_BASE_URL ?? "http://localhost:4000"}/v1/modules/media/key-messages`, {
     method: "POST",
     headers: {
       "content-type": "application/json"

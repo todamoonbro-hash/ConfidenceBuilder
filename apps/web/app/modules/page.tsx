@@ -17,7 +17,7 @@ type ArticulationDrill = {
 
 async function loadArticulationDrills(): Promise<ArticulationDrill[]> {
   try {
-    const response = await fetch("http://localhost:4000/v1/modules/articulation/drills", { cache: "no-store" });
+    const response = await fetch(`${process.env.API_BASE_URL ?? "http://localhost:4000"}/v1/modules/articulation/drills`, { cache: "no-store" });
     if (!response.ok) return [];
     const payload = (await response.json()) as { drills?: ArticulationDrill[] };
     return payload.drills ?? [];
@@ -30,7 +30,7 @@ export default async function ModulesPage() {
   const drills = await loadArticulationDrills();
   const mediaDrills = await (async () => {
     try {
-      const response = await fetch("http://localhost:4000/v1/modules/media/drills", { cache: "no-store" });
+      const response = await fetch(`${process.env.API_BASE_URL ?? "http://localhost:4000"}/v1/modules/media/drills`, { cache: "no-store" });
       if (!response.ok) return [];
       const payload = (await response.json()) as { drills?: Array<any> };
       return payload.drills ?? [];
@@ -40,7 +40,7 @@ export default async function ModulesPage() {
   })();
   const readingPassages = await (async () => {
     try {
-      const response = await fetch("http://localhost:4000/v1/modules/reading/passages", { cache: "no-store" });
+      const response = await fetch(`${process.env.API_BASE_URL ?? "http://localhost:4000"}/v1/modules/reading/passages`, { cache: "no-store" });
       if (!response.ok) return [];
       const payload = (await response.json()) as { passages?: Array<any> };
       return payload.passages ?? [];
@@ -58,7 +58,7 @@ export default async function ModulesPage() {
       />
 
       {/* Lab sequence guide */}
-      <section className="mb-6 rounded-2xl border border-slate-200 bg-gradient-to-br from-blue-50 to-white p-5 shadow-sm">
+      <section className="mb-6 rounded-lg border border-slate-200 p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-slate-900">Suggested sequence</h2>
         <div className="mt-3 grid gap-2 text-sm text-slate-600 md:grid-cols-3">
           <p><span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white mr-2">1</span>Articulation or Reading</p>

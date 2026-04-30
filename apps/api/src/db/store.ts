@@ -13,7 +13,11 @@ import type {
   UserQuestProgress,
   BossChallengeAttempt,
   Transcript,
-  FeedbackItem
+  FeedbackItem,
+  ModelPreference,
+  PersonalCoachProfile,
+  SessionMemory,
+  SkillBranch
 } from "./types";
 
 import { createSeedSnapshot } from "./seed-data";
@@ -274,6 +278,65 @@ export function saveScoreForAttempt(payload: Omit<Score, "id">): Score {
 
   snapshot.scores = [...snapshot.scores.filter((item) => item.attemptId !== payload.attemptId), score];
   return score;
+}
+
+export function getPersonalCoachProfileByUser(userId: string): PersonalCoachProfile | undefined {
+  return snapshot.personalCoachProfiles.find((item) => item.userId === userId);
+}
+
+export function savePersonalCoachProfile(payload: Omit<PersonalCoachProfile, "id" | "updatedAt">): PersonalCoachProfile {
+  const existing = getPersonalCoachProfileByUser(payload.userId);
+  const profile: PersonalCoachProfile = {
+    id: existing?.id ?? `pcp_${String(snapshot.personalCoachProfiles.length + 1).padStart(3, "0")}`,
+    ...payload,
+    updatedAt: new Date().toISOString()
+  };
+
+  snapshot.personalCoachProfiles = [...snapshot.personalCoachProfiles.filter((item) => item.userId !== payload.userId), profile];
+  return profile;
+}
+
+export function getModelPreferences(): ModelPreference[] {
+  return snapshot.modelPreferences;
+}
+
+export function getModelPreferenceForTask(task: ModelPreference["task"]): ModelPreference | undefined {
+  return snapshot.modelPreferences.find((item) => item.task === task && item.enabled);
+}
+
+export function saveModelPreferences(preferences: ModelPreference[]): ModelPreference[] {
+  snapshot.modelPreferences = preferences;
+  return snapshot.modelPreferences;
+}
+
+export function getSessionMemoriesByUser(userId: string, limit = 8): SessionMemory[] {
+  return snapshot.sessionMemories
+    .filter((item) => item.userId === userId)
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+    .slice(0, limit);
+}
+
+export function saveSessionMemory(payload: {
+  userId: string;
+  attemptId?: string;
+  skillBranch: SkillBranch;
+  situation: string;
+  modelProvider?: SessionMemory["modelProvider"];
+  modelName?: string;
+  transcriptSummary: string;
+  observedWeakness: string;
+  priorityFix: string;
+  nextDrill: string;
+  scoreTotal?: number;
+}): SessionMemory {
+  const memory: SessionMemory = {
+    id: `mem_${String(snapshot.sessionMemories.length + 1).padStart(3, "0")}`,
+    createdAt: new Date().toISOString(),
+    ...payload
+  };
+
+  snapshot.sessionMemories = [memory, ...snapshot.sessionMemories].slice(0, 100);
+  return memory;
 }
 
 export function getMediaKeyMessagesByUser(userId: string): MediaKeyMessageSet | undefined {

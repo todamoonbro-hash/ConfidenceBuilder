@@ -19,25 +19,25 @@ export function ExecutivePresenceStudio({ library }: { library: any }) {
 
   return (
     <section className="grid gap-4">
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <article className="rounded-lg border border-slate-200 bg-white p-4">
         <p className="text-xs uppercase tracking-wide text-slate-500">Ethics</p>
         <p className="mt-1 text-sm text-slate-700">{library?.ethicsNotice}</p>
       </article>
 
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <article className="rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-lg font-semibold">Scenario selection</h2>
-        <p className="text-sm text-slate-600">Sub-sections: {(library?.subSections ?? []).join(" · ")}</p>
+        <p className="text-sm text-slate-600">Sub-sections: {(library?.subSections ?? []).join("  -  ")}</p>
         <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
           {scenarios.map((item: any) => (
             <button key={item.id} type="button" onClick={() => setScenarioId(item.id)} className={`rounded-lg border p-3 text-left ${scenarioId === item.id ? "border-slate-900 bg-slate-50" : "border-slate-200"}`}>
               <p className="text-sm font-semibold">{item.title}</p>
-              <p className="text-xs text-slate-600">{item.subsection} · {item.pressureLevel}</p>
+              <p className="text-xs text-slate-600">{item.subsection}  -  {item.pressureLevel}</p>
             </button>
           ))}
         </div>
       </article>
 
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <article className="rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-lg font-semibold">Practice</h2>
         <div className="mt-2 grid gap-3 md:grid-cols-4">
           <label className="text-sm">Framework
@@ -98,7 +98,7 @@ export function ExecutivePresenceStudio({ library }: { library: any }) {
       </article>
 
       {report ? (
-        <article className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+        <article className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
           <h2 className="text-lg font-semibold">Reports</h2>
           <p>Executive Presence score: {report.executivePresenceScore}</p>
           <p>Answered actual question: {String(report.checks.answeredActualQuestion)}</p>
@@ -113,16 +113,16 @@ export function ExecutivePresenceStudio({ library }: { library: any }) {
       ) : null}
 
       <section className="grid gap-4 md:grid-cols-2">
-        <article className="rounded-2xl border border-slate-200 bg-white p-4">
+        <article className="rounded-lg border border-slate-200 bg-white p-4">
           <h3 className="font-semibold">Presence Drills</h3>
           <ul className="mt-2 list-disc pl-5 text-sm text-slate-700">
             {(library?.drills ?? []).map((drill: string) => <li key={drill}>{drill}</li>)}
           </ul>
         </article>
-        <article className="rounded-2xl border border-slate-200 bg-white p-4">
+        <article className="rounded-lg border border-slate-200 bg-white p-4">
           <h3 className="font-semibold">Gamification</h3>
           <p className="mt-2 text-sm text-slate-700">Badges: {(library?.badges ?? []).join(", ")}</p>
-          {progress ? <p className="mt-2 text-sm text-slate-700">Level {progress.level} · XP {progress.overallXp}</p> : null}
+          {progress ? <p className="mt-2 text-sm text-slate-700">Level {progress.level}  -  XP {progress.overallXp}</p> : null}
         </article>
       </section>
     </section>

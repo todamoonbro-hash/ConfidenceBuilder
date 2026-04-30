@@ -16,14 +16,14 @@ export function NetworkingStudio({ library }: { library: any }) {
 
   return (
     <section className="grid gap-4">
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <article className="rounded-lg border border-slate-200 bg-white p-4">
         <p className="text-xs uppercase tracking-wide text-slate-500">Ethics</p>
         <p className="mt-1 text-sm text-slate-700">{library?.ethicsNotice}</p>
       </article>
 
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <article className="rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-lg font-semibold">Scenario library</h2>
-        <p className="text-sm text-slate-600">Sub-sections: {(library?.subSections ?? []).join(" · ")}</p>
+        <p className="text-sm text-slate-600">Sub-sections: {(library?.subSections ?? []).join("  -  ")}</p>
         <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
           {scenarios.map((item: any) => (
             <button key={item.id} type="button" onClick={() => setScenarioId(item.id)} className={`rounded-lg border p-3 text-left ${scenarioId === item.id ? "border-slate-900 bg-slate-50" : "border-slate-200"}`}>
@@ -34,7 +34,7 @@ export function NetworkingStudio({ library }: { library: any }) {
         </div>
       </article>
 
-      <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <article className="rounded-lg border border-slate-200 bg-white p-4">
         <h2 className="text-lg font-semibold">Roleplay</h2>
         <div className="mt-2 grid gap-3 md:grid-cols-2">
           <label className="text-sm">Framework
@@ -88,10 +88,10 @@ export function NetworkingStudio({ library }: { library: any }) {
       </article>
 
       {result ? (
-        <article className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+        <article className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
           <h2 className="text-lg font-semibold">Reports</h2>
-          <p>Warmth: {result.report.scores.warmth} · Clarity: {result.report.scores.clarity} · Confidence: {result.report.scores.confidence}</p>
-          <p>Rapport score: {result.report.rapportScore} · Ask clarity score: {result.report.askClarityScore}</p>
+          <p>Warmth: {result.report.scores.warmth}  -  Clarity: {result.report.scores.clarity}  -  Confidence: {result.report.scores.confidence}</p>
+          <p>Rapport score: {result.report.rapportScore}  -  Ask clarity score: {result.report.askClarityScore}</p>
           <p>Desperation detector triggered: {String(result.report.desperationDetector.triggered)}</p>
           <p>Detector coaching: {result.report.desperationDetector.coaching}</p>
           <p>Follow-up draft: {result.report.followUpDraft}</p>

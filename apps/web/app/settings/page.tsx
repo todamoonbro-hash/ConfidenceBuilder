@@ -1,28 +1,29 @@
 import { PageHeader } from "../../components/ui/page-header";
-import { PlaceholderCard } from "../../components/ui/placeholder-card";
+import { PersonalCoachSettings } from "../../components/settings/personal-coach-settings";
 
-export default function SettingsPage() {
+async function loadPersonalization() {
+  try {
+    const response = await fetch(`${process.env.API_BASE_URL ?? "http://localhost:4000"}/v1/coach/user_001/personalization`, {
+      cache: "no-store"
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+export default async function SettingsPage() {
+  const data = await loadPersonalization();
+
   return (
     <>
       <PageHeader
-        title="Settings"
-        subtitle="Control profile details, coaching style, and session preferences used across your academy plan."
-        kicker="Account"
+        title="Personal Coach Setup"
+        subtitle="Tune the platform around your goals, your weak spots, and low-cost model choices."
+        kicker="Settings"
       />
-      <div className="grid gap-4 md:grid-cols-2">
-        <PlaceholderCard
-          title="Profile"
-          description="Add your current role, communication context, and upcoming high-stakes speaking events."
-          ctaLabel="Update onboarding"
-          ctaHref="/onboarding"
-        />
-        <PlaceholderCard
-          title="Coaching preferences"
-          description="Set session duration, practice intensity, and feedback tone so each rep stays realistic and useful."
-          ctaLabel="Open modules"
-          ctaHref="/modules"
-        />
-      </div>
+      <PersonalCoachSettings initialData={data} />
     </>
   );
 }

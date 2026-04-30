@@ -5,7 +5,7 @@ export async function POST(request: Request) {
     skillBranch?: string;
   };
 
-  const apiResponse = await fetch(`http://localhost:4000/v1/attempts/${encodeURIComponent(payload.attemptId)}/feedback/generate`, {
+  const apiResponse = await fetch(`${process.env.API_BASE_URL ?? "http://localhost:4000"}/v1/attempts/${encodeURIComponent(payload.attemptId)}/feedback/generate`, {
     method: "POST",
     headers: {
       "content-type": "application/json"

@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     preferredCoachStyle: String(formData.get("preferredCoachStyle") ?? "balanced")
   };
 
-  await fetch("http://localhost:4000/v1/onboarding", {
+  await fetch(`${process.env.API_BASE_URL ?? "http://localhost:4000"}/v1/onboarding`, {
     method: "POST",
     headers: {
       "content-type": "application/json"

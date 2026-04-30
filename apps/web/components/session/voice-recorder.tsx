@@ -244,7 +244,7 @@ export function VoiceRecorder({
     }
 
     if (isRecording) {
-      return "Recording live…";
+      return "Recording live...";
     }
 
     return "Ready. Press start to begin.";
@@ -258,7 +258,7 @@ export function VoiceRecorder({
 
     setPermissionError(undefined);
     setSaveState("idle");
-    setSaveMessage("Recording live…");
+    setSaveMessage("Recording live...");
     setTranscriptionError(undefined);
 
     try {
@@ -778,7 +778,7 @@ export function VoiceRecorder({
   };
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-900">Recorder and feedback</h2>
       <p className="mt-1 text-sm text-slate-600">Record once, review quickly, and apply one improvement on your retry.</p>
       {drillInstruction ? (
@@ -790,7 +790,7 @@ export function VoiceRecorder({
             <strong>Example phrase:</strong> {drillExamplePhrase}
           </p>
           <p className="mt-1">
-            <strong>Target focus:</strong> {drillTargetFocus} · <strong>Difficulty:</strong> {drillDifficultyLevel}
+            <strong>Target focus:</strong> {drillTargetFocus}  -  <strong>Difficulty:</strong> {drillDifficultyLevel}
           </p>
         </div>
       ) : null}
@@ -926,7 +926,7 @@ export function VoiceRecorder({
           {articulationError ? <p className="mt-2 text-red-700">{articulationError}</p> : null}
           {articulationHeuristic ? (
             <p className="mt-2">
-              Score: {articulationHeuristic.total} · XP awarded: {articulationHeuristic.awardedXp}
+              Score: {articulationHeuristic.total}  -  XP awarded: {articulationHeuristic.awardedXp}
             </p>
           ) : null}
         </div>
@@ -958,7 +958,7 @@ export function VoiceRecorder({
           {mediaScoreError ? <p className="mt-2 text-red-700">{mediaScoreError}</p> : null}
           {mediaScore ? (
             <p className="mt-2">
-              Total: {mediaScore.total} · XP: {mediaScore.awardedXp} · Message control: {mediaScore.scores.messageControl}
+              Total: {mediaScore.total}  -  XP: {mediaScore.awardedXp}  -  Message control: {mediaScore.scores.messageControl}
             </p>
           ) : null}
 
@@ -976,7 +976,7 @@ export function VoiceRecorder({
               {soundbiteError ? <p className="mt-2 text-red-700">{soundbiteError}</p> : null}
               {soundbiteScore ? (
                 <p className="mt-2">
-                  Brevity {soundbiteScore.brevity} · Clarity {soundbiteScore.clarity} · Memorability {soundbiteScore.memorability} · XP{" "}
+                  Brevity {soundbiteScore.brevity}  -  Clarity {soundbiteScore.clarity}  -  Memorability {soundbiteScore.memorability}  -  XP{" "}
                   {soundbiteScore.xp}
                 </p>
               ) : null}
@@ -1001,7 +1001,7 @@ export function VoiceRecorder({
           {readingEvaluation ? (
             <div className="mt-2 text-xs">
               <p>
-                Reading score: {readingEvaluation.total} · XP: {readingEvaluation.awardedXp} · WPM: {readingEvaluation.metrics.wordsPerMinute}
+                Reading score: {readingEvaluation.total}  -  XP: {readingEvaluation.awardedXp}  -  WPM: {readingEvaluation.metrics.wordsPerMinute}
               </p>
               <p>Accuracy: {readingEvaluation.comparison.accuracyScore}</p>
               <p>Skipped words: {readingEvaluation.comparison.skippedWords.join(", ") || "none"}</p>
@@ -1009,7 +1009,7 @@ export function VoiceRecorder({
               <p>
                 Substitutions:{" "}
                 {readingEvaluation.comparison.substitutions.length > 0
-                  ? readingEvaluation.comparison.substitutions.map((item) => `${item.expected}→${item.actual}`).join(", ")
+                  ? readingEvaluation.comparison.substitutions.map((item) => `${item.expected}->${item.actual}`).join(", ")
                   : "none"}
               </p>
               <p className="mt-1">Pacing: {readingEvaluation.feedback.pacing}</p>
@@ -1026,7 +1026,7 @@ export function VoiceRecorder({
       {impromptuMode ? (
         <div className="mt-4 rounded-md border border-violet-200 bg-violet-50 p-3 text-sm text-violet-900">
           <p className="font-medium">Impromptu evaluation</p>
-          <p className="mt-1 text-xs">Target timer: {impromptuTargetSeconds}s {impromptuPrompt ? "· prompt loaded" : ""}</p>
+          <p className="mt-1 text-xs">Target timer: {impromptuTargetSeconds}s {impromptuPrompt ? " -  prompt loaded" : ""}</p>
           <button
             type="button"
             onClick={evaluateImpromptu}
@@ -1039,19 +1039,19 @@ export function VoiceRecorder({
           {impromptuEvaluation ? (
             <div className="mt-2 text-xs">
               <p>
-                Total: {impromptuEvaluation.total} · XP: {impromptuEvaluation.xpAward} · Fillers: {impromptuEvaluation.diagnostics.fillerWordCount}
+                Total: {impromptuEvaluation.total}  -  XP: {impromptuEvaluation.xpAward}  -  Fillers: {impromptuEvaluation.diagnostics.fillerWordCount}
               </p>
               <p>Retry instruction: {impromptuEvaluation.retryInstruction}</p>
               <p>Retry needed: {impromptuEvaluation.shouldRetry ? "Yes" : "No"}</p>
               <p>
-                Clarity {impromptuEvaluation.scores.clarity} · Structure {impromptuEvaluation.scores.structure} · Confidence{" "}
+                Clarity {impromptuEvaluation.scores.clarity}  -  Structure {impromptuEvaluation.scores.structure}  -  Confidence{" "}
                 {impromptuEvaluation.scores.confidence}
               </p>
               <p>
-                Brevity {impromptuEvaluation.scores.brevity} · Filler words {impromptuEvaluation.scores.fillerWords} · Completeness{" "}
+                Brevity {impromptuEvaluation.scores.brevity}  -  Filler words {impromptuEvaluation.scores.fillerWords}  -  Completeness{" "}
                 {impromptuEvaluation.scores.answerCompleteness}
               </p>
-              {impromptuEvaluation.improvement ? <p>Improvement: +{impromptuEvaluation.improvement.delta} · {impromptuEvaluation.improvement.summary}</p> : null}
+              {impromptuEvaluation.improvement ? <p>Improvement: +{impromptuEvaluation.improvement.delta}  -  {impromptuEvaluation.improvement.summary}</p> : null}
             </div>
           ) : null}
         </div>
@@ -1072,13 +1072,13 @@ export function VoiceRecorder({
           {listeningError ? <p className="mt-2 text-red-700">{listeningError}</p> : null}
           {listeningEvaluation ? (
             <div className="mt-2 text-xs">
-              <p>Total: {listeningEvaluation.total} · XP: {listeningEvaluation.awardedXp}</p>
+              <p>Total: {listeningEvaluation.total}  -  XP: {listeningEvaluation.awardedXp}</p>
               <p>
-                Summary {listeningEvaluation.scores.summaryAccuracy} · Relevance {listeningEvaluation.scores.relevance} · Alignment{" "}
+                Summary {listeningEvaluation.scores.summaryAccuracy}  -  Relevance {listeningEvaluation.scores.relevance}  -  Alignment{" "}
                 {listeningEvaluation.scores.answerAlignment}
               </p>
               <p>
-                Concision {listeningEvaluation.scores.concision} · Tone recognition {listeningEvaluation.scores.toneRecognition}
+                Concision {listeningEvaluation.scores.concision}  -  Tone recognition {listeningEvaluation.scores.toneRecognition}
               </p>
               <p>
                 Focus matches: {listeningEvaluation.diagnostics.matchedFocusCount}/{listeningEvaluation.diagnostics.expectedFocusCount}
@@ -1106,20 +1106,20 @@ export function VoiceRecorder({
           {executiveError ? <p className="mt-2 text-red-700">{executiveError}</p> : null}
           {executiveEvaluation ? (
             <div className="mt-2 text-xs">
-              <p>Total: {executiveEvaluation.total} · XP: {executiveEvaluation.xpAward}</p>
+              <p>Total: {executiveEvaluation.total}  -  XP: {executiveEvaluation.xpAward}</p>
               <p>
-                Presence {executiveEvaluation.scores.executivePresence} · Commercial {executiveEvaluation.scores.commercialSharpness} · Clarity{" "}
+                Presence {executiveEvaluation.scores.executivePresence}  -  Commercial {executiveEvaluation.scores.commercialSharpness}  -  Clarity{" "}
                 {executiveEvaluation.scores.clarity}
               </p>
               <p>
-                Brevity {executiveEvaluation.scores.brevity} · Confidence {executiveEvaluation.scores.confidence} · Structure{" "}
+                Brevity {executiveEvaluation.scores.brevity}  -  Confidence {executiveEvaluation.scores.confidence}  -  Structure{" "}
                 {executiveEvaluation.scores.answerStructure}
               </p>
               <p>Structure coaching: {executiveEvaluation.structureCoaching}</p>
               <p>Improved answer suggestion: {executiveEvaluation.improvedAnswerSuggestion}</p>
               <p>Challenge follow-up: {executiveEvaluation.followUpQuestion}</p>
               <p>Retry needed: {executiveEvaluation.shouldRetry ? "Yes" : "No"}</p>
-              {executiveEvaluation.improvement ? <p>Improvement: +{executiveEvaluation.improvement.delta} · {executiveEvaluation.improvement.summary}</p> : null}
+              {executiveEvaluation.improvement ? <p>Improvement: +{executiveEvaluation.improvement.delta}  -  {executiveEvaluation.improvement.summary}</p> : null}
             </div>
           ) : null}
         </div>
@@ -1142,10 +1142,10 @@ export function VoiceRecorder({
             <div className="mt-2 text-xs">
               <p>Total: {crisisEvaluation.total}</p>
               <p>One fix: {crisisEvaluation.oneFix}</p>
-              <p>Retry needed: {crisisEvaluation.shouldRetry ? "Yes — answer same question again" : "No"}</p>
+              <p>Retry needed: {crisisEvaluation.shouldRetry ? "Yes - answer same question again" : "No"}</p>
               {crisisEvaluation.improvement ? (
                 <p>
-                  Improvement delta: {crisisEvaluation.improvement.delta} · {crisisEvaluation.improvement.summary}
+                  Improvement delta: {crisisEvaluation.improvement.delta}  -  {crisisEvaluation.improvement.summary}
                 </p>
               ) : null}
             </div>
