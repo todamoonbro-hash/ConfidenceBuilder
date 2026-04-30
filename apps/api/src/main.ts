@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import Fastify from "fastify";
 
 import {
@@ -78,9 +79,58 @@ const VALID_AI_TASKS: AiTaskType[] = ["realtimeCoach", "transcription", "tts", "
 const VALID_COST_MODES: CostMode[] = ["lowest_cost", "balanced", "best_quality"];
 const VALID_COACH_STRICTNESS = ["supportive", "balanced", "direct", "tough"] as const;
 
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS ?? "http://localhost:3000").split(",").map((o) => o.trim());
+
+// Simple in-memory rate limiter: max requests per window per IP
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX ?? 300);
+const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
+
+const ALLOWED_MIME_TYPES = new Set([
+  "audio/webm",
+  "audio/ogg",
+  "audio/mp4",
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/aac",
+  "audio/flac",
+  "audio/x-m4a"
+]);
+
 const app = Fastify({
   logger: true,
   bodyLimit: Number(process.env.MAX_JSON_BODY_BYTES ?? DEFAULT_BODY_LIMIT_BYTES)
+});
+
+// CORS
+app.addHook("onRequest", async (request, reply) => {
+  const origin = request.headers.origin;
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    void reply.header("access-control-allow-origin", origin);
+    void reply.header("access-control-allow-credentials", "true");
+  }
+  void reply.header("access-control-allow-methods", "GET,POST,PUT,DELETE,OPTIONS");
+  void reply.header("access-control-allow-headers", "content-type,x-admin-token");
+  if (request.method === "OPTIONS") {
+    return reply.status(204).send();
+  }
+});
+
+// Rate limiting
+app.addHook("onRequest", async (request, reply) => {
+  const ip = request.ip ?? "unknown";
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+    rateLimitMap.set(ip, { count: 1, windowStart: now });
+  } else {
+    entry.count++;
+    if (entry.count > RATE_LIMIT_MAX) {
+      return reply.status(429).send({ ok: false, error: "rate_limit_exceeded" });
+    }
+  }
 });
 
 
@@ -101,10 +151,19 @@ function cleanStringList(value: unknown, fallback: string[], limit: number) {
     .slice(0, limit);
 }
 
+function timingSafeStringEqual(a: string, b: string): boolean {
+  // Pad both to the same length using a hash so length itself isn't a timing oracle
+  const ha = createHash("sha256").update(a).digest();
+  const hb = createHash("sha256").update(b).digest();
+  return timingSafeEqual(ha, hb);
+}
+
 function isAdminRequest(request: { headers: Record<string, unknown> }) {
   const configuredToken = process.env.ADMIN_API_TOKEN;
+  if (!configuredToken) return false;
   const providedToken = String(request.headers["x-admin-token"] ?? "");
-  return Boolean(configuredToken && providedToken && providedToken === configuredToken);
+  if (!providedToken) return false;
+  return timingSafeStringEqual(providedToken, configuredToken);
 }
 
 app.get("/health", async () => ({ status: "ok", service: "confidencebuilder-api", date: new Date().toISOString() }));
@@ -599,9 +658,11 @@ app.post("/v1/recordings/transcribe", async (request) => {
       return { ok: false, error: "audio_payload_too_large", maxBytes: MAX_AUDIO_BYTES };
     }
 
+    const resolvedMimeType = body.mimeType && ALLOWED_MIME_TYPES.has(body.mimeType) ? body.mimeType : "audio/webm";
+
     const result = await transcribeAudio({
       audioBuffer,
-      mimeType: body.mimeType || "audio/webm",
+      mimeType: resolvedMimeType,
       fileName: body.fileName
     });
 

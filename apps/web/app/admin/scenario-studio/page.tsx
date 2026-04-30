@@ -1,5 +1,12 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import { PageHeader } from "../../../components/ui/page-header";
 import { ScenarioStudioAdmin } from "../../../components/admin/scenario-studio-admin";
+
+function timingSafeStringEqual(a: string, b: string): boolean {
+  const ha = createHash("sha256").update(a).digest();
+  const hb = createHash("sha256").update(b).digest();
+  return timingSafeEqual(ha, hb);
+}
 
 export default async function ScenarioStudioPage({
   searchParams
@@ -8,7 +15,7 @@ export default async function ScenarioStudioPage({
 }) {
   const { adminToken } = await searchParams;
   const configuredToken = process.env.ADMIN_UI_TOKEN;
-  const isAdmin = Boolean(configuredToken && adminToken && adminToken === configuredToken);
+  const isAdmin = Boolean(configuredToken && adminToken && timingSafeStringEqual(adminToken, configuredToken));
 
   if (!isAdmin) {
     return (
