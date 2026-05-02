@@ -25,12 +25,12 @@ export function createSeedSnapshot(): DatabaseSnapshot {
     modelPreferences: snapshot.modelPreferences ?? [
       {
         task: "feedback",
-        provider: "openai",
-        model: process.env.OPENAI_FEEDBACK_MODEL ?? "gpt-4.1-mini",
+        provider: "deepseek",
+        model: "deepseek-chat",
         costMode: "lowest_cost",
         enabled: true,
-        fallbackProvider: "openai",
-        fallbackModel: "gpt-4.1-mini"
+        fallbackProvider: "mistral",
+        fallbackModel: "mistral-small-latest"
       },
       {
         task: "transcription",
@@ -41,12 +41,12 @@ export function createSeedSnapshot(): DatabaseSnapshot {
       },
       {
         task: "deepReview",
-        provider: "anthropic",
-        model: "claude-sonnet",
-        costMode: "balanced",
+        provider: "mistral",
+        model: "mistral-small-latest",
+        costMode: "lowest_cost",
         enabled: true,
-        fallbackProvider: "openai",
-        fallbackModel: "gpt-4.1-mini"
+        fallbackProvider: "openrouter",
+        fallbackModel: "deepseek/deepseek-chat"
       },
       {
         task: "cheapScoring",

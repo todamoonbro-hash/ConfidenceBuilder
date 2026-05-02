@@ -30,11 +30,12 @@ export function AppShell({ children }: AppShellProps) {
             <details className="relative">
               <summary className="inline-flex min-h-9 cursor-pointer list-none items-center gap-1 rounded-md border border-transparent px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-slate-200 hover:bg-slate-100 hover:text-slate-950 [&::-webkit-details-marker]:hidden">
                 More
-                <span aria-hidden="true">▾</span>
+                <span aria-hidden="true">v</span>
               </summary>
               <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-md border border-slate-200 bg-white py-1 shadow-lg">
                 <a href="/settings" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Settings</a>
                 <a href="/history" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">History</a>
+                <a href="/baseline" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Baseline</a>
                 <a href="/onboarding" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Edit profile</a>
                 <a href="/admin/scenario-studio" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Admin</a>
               </div>
@@ -51,3 +52,4 @@ export function AppShell({ children }: AppShellProps) {
     </div>
   );
 }
+

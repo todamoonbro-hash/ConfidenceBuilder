@@ -90,7 +90,6 @@ export function ListeningResponseLab() {
         <VoiceRecorder
           userId={DEFAULT_USER_ID}
           skillBranch="listening"
-          initialSessionId="sess_001"
           initialExerciseId={drill.id}
           drillInstruction="Listen closely, answer directly, and reflect tone/intent."
           drillExamplePhrase={drill.promptText}

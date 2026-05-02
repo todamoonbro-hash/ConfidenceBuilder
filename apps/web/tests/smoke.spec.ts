@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 
-const corePages = [
-  { path: "/", heading: "Train like a leader people trust" },
+// "/" redirects first-time users to /onboarding (no profile seeded by default), so we accept either heading.
+// Once onboarding submits, "/" will render the home dashboard heading instead.
+const corePages: Array<{ path: string; heading: string | RegExp }> = [
+  { path: "/", heading: /Train like a leader people trust|Your speaking profile/ },
   { path: "/dashboard", heading: "Dashboard" },
   { path: "/modules", heading: "All training modules" },
   { path: "/session", heading: "Focused speaking rep" },

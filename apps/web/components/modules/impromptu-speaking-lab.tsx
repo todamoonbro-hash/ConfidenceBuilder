@@ -85,7 +85,6 @@ export function ImpromptuSpeakingLab() {
         <VoiceRecorder
           userId={DEFAULT_USER_ID}
           skillBranch="impromptu"
-          initialSessionId="sess_001"
           initialExerciseId={`impromptu_${category}`}
           drillInstruction="Answer the prompt directly. Use answer -> reason -> example."
           drillExamplePhrase={prompt}

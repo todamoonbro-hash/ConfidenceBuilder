@@ -99,7 +99,6 @@ export function ReadingAloudLab({ passages }: ReadingAloudLabProps) {
           <VoiceRecorder
             userId={DEFAULT_USER_ID}
             skillBranch="reading"
-            initialSessionId="sess_001"
             initialExerciseId={selectedPassage.id}
             drillId={selectedPassage.id}
             drillInstruction="Read the selected passage aloud once, then evaluate."

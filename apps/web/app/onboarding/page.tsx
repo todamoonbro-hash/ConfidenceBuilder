@@ -84,19 +84,13 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        <div className="mt-6 flex gap-3">
-          <button 
-            type="submit" 
+        <div className="mt-6 flex">
+          <button
+            type="submit"
             className="flex-1 rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
           >
             Save profile and start
           </button>
-          <a 
-            href="/" 
-            className="px-5 py-3 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors text-center"
-          >
-            Skip for now
-          </a>
         </div>
       </form>
 

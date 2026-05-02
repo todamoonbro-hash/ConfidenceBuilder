@@ -80,9 +80,27 @@ function toModule(drillType: DrillType): ModuleKey {
 }
 
 function average(values: number[]): number {
-  if (values.length === 0) return 0;
-  return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
+  // Skip NOT_MEASURED (-1) sentinels so honestly-absent dimensions don't poison aggregates.
+  const valid = values.filter((value) => value !== NOT_MEASURED && Number.isFinite(value));
+  if (valid.length === 0) return 0;
+  return Math.round(valid.reduce((sum, value) => sum + value, 0) / valid.length);
 }
+
+function isNotMeasuredSkill(skill: UnifiedSkill): boolean {
+  return NOT_MEASURED_DIMENSIONS.includes(skill);
+}
+
+// Sentinel value for dimensions we cannot honestly measure from text alone.
+// Consumers / UI must check NOT_MEASURED_DIMENSIONS before displaying these as scores.
+export const NOT_MEASURED = -1 as const;
+
+// Dimensions that REQUIRE camera or audio prosody analysis (which we don't have on the server today).
+// We refuse to fabricate these from text-only signals; they read as "not measured" in the UI.
+export const NOT_MEASURED_DIMENSIONS: readonly UnifiedSkill[] = [
+  "vocal_energy",
+  "pace",
+  "eye_contact_body_language"
+] as const;
 
 function scoreToSkillVector(score: Score): Record<UnifiedSkill, number> {
   return {
@@ -90,8 +108,10 @@ function scoreToSkillVector(score: Score): Record<UnifiedSkill, number> {
     conciseness: score.concision,
     structure: Math.round((score.presentation + score.executivePresence) / 2),
     confidence: score.confidence,
-    vocal_energy: Math.round((score.confidence + score.presentation) / 2),
-    pace: Math.round((score.readingFluency + score.clarity) / 2),
+    // vocal_energy / pace require audio prosody (pitch contour, rms energy, articulation rate) which the
+    // text-only scoring pipeline cannot produce. We report NOT_MEASURED instead of inventing a number.
+    vocal_energy: NOT_MEASURED,
+    pace: NOT_MEASURED,
     filler_words: Math.max(0, 100 - score.concision),
     articulation: score.articulation,
     storytelling: score.storytelling,
@@ -100,7 +120,8 @@ function scoreToSkillVector(score: Score): Record<UnifiedSkill, number> {
     listening: score.listening ?? score.listeningAccuracy,
     objection_handling: Math.round((score.persuasion + score.executivePresence) / 2),
     emotional_control: Math.round((score.executivePresence + score.confidence) / 2),
-    eye_contact_body_language: Math.round((score.executivePresence + score.confidence) / 2),
+    // eye_contact / body_language require camera. Honest absence beats a synthetic "executivePresence + confidence / 2" number.
+    eye_contact_body_language: NOT_MEASURED,
     reading_fluency: score.readingFluency,
     improvisation: score.impromptu,
     commercial_acumen: Math.round((score.persuasion + score.mediaControl) / 2),
@@ -136,12 +157,15 @@ export function buildAdaptiveCoachOverview(db: DatabaseSnapshot, userId: string)
 
   const skillScores = Object.fromEntries(
     UNIFIED_SKILL_TAXONOMY.map((skill) => {
+      if (isNotMeasuredSkill(skill)) return [skill, NOT_MEASURED];
       const values = latestScores.map((item) => scoreToSkillVector(item)[skill]);
       return [skill, average(values)];
     })
   ) as Record<UnifiedSkill, number>;
 
-  const weaknessTags = UNIFIED_SKILL_TAXONOMY.filter((skill) => skillScores[skill] < 70)
+  // Weaknesses are measured-only; we never label an unmeasured dimension a "weakness".
+  const weaknessTags = UNIFIED_SKILL_TAXONOMY
+    .filter((skill) => !isNotMeasuredSkill(skill) && skillScores[skill] < 70)
     .sort((left, right) => skillScores[left] - skillScores[right])
     .slice(0, 6);
 
@@ -249,15 +273,22 @@ export function buildAdaptiveCoachOverview(db: DatabaseSnapshot, userId: string)
 
   const userSkillTree = UNIFIED_SKILL_TAXONOMY.map((skill) => {
     const score = skillScores[skill];
-    const levelIndex = Math.min(LEVELS.length - 1, Math.max(0, Math.floor(score / 20)));
-    const progressPercent = Math.min(100, Math.max(0, score));
+    const isMeasured = !isNotMeasuredSkill(skill) && score !== NOT_MEASURED;
+    const levelIndex = isMeasured ? Math.min(LEVELS.length - 1, Math.max(0, Math.floor(score / 20))) : 0;
+    const progressPercent = isMeasured ? Math.min(100, Math.max(0, score)) : 0;
 
     return {
       skill,
-      currentLevel: LEVELS[levelIndex],
-      progressPercent,
-      unlockedDrills: levelIndex + 1,
-      nextUnlock: LEVELS[Math.min(LEVELS.length - 1, levelIndex + 1)]
+      measured: isMeasured,
+      // For unmeasured skills, expose explicit nulls so the UI can render a clear "not measured this session"
+      // affordance instead of a misleading 0% bar.
+      currentLevel: isMeasured ? LEVELS[levelIndex] : null,
+      progressPercent: isMeasured ? progressPercent : null,
+      unlockedDrills: isMeasured ? levelIndex + 1 : 0,
+      nextUnlock: isMeasured ? LEVELS[Math.min(LEVELS.length - 1, levelIndex + 1)] : null,
+      notMeasuredReason: isMeasured
+        ? null
+        : "Requires audio prosody or camera input — not measured from text-only scoring."
     };
   });
 

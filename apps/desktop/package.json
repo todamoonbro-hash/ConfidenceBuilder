@@ -1,0 +1,12 @@
+{
+  "name": "@confidencebuilder/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node scripts/start.js"
+  },
+  "devDependencies": {
+    "electron": "^41.4.0"
+  }
+}

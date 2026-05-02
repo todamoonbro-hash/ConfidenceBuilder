@@ -75,7 +75,6 @@ export function ArticulationStudio({ drills }: ArticulationStudioProps) {
         <VoiceRecorder
           userId={DEFAULT_USER_ID}
           skillBranch="articulation"
-          initialSessionId="sess_001"
           initialExerciseId={selectedDrill.id}
           drillId={selectedDrill.id}
           drillInstruction={selectedDrill.instruction}

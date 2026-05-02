@@ -2,12 +2,17 @@
 node_modules/
 
 # builds
+.next/
 apps/web/.next/
 apps/api/dist/
+apps/desktop/dist/
+apps/worker/dist/
 apps/web/tsconfig.tsbuildinfo
 apps/api/.data/
 apps/web/test-results/
 apps/web/playwright-report/
+*-runtime.log
+*-runtime.err.log
 
 # env files (keep examples only)
 .env

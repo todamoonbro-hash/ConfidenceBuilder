@@ -43,6 +43,13 @@ type VoiceRecorderProps = {
     openingQuestion: string;
     scenarioBrief: string;
   };
+  // When true, after a successful save the recorder automatically transcribes and generates feedback
+  // in one chain — used by the Today daily-session flow so the user only taps once. Defaults to false
+  // for legacy call sites (articulation/media/etc.) that score with their own buttons.
+  autoChain?: boolean;
+  // Hide the dev-only Session/Exercise ID text inputs. Defaults to true (hidden) — pass false for
+  // debug surfaces.
+  hideDeveloperFields?: boolean;
 };
 
 const formatDuration = (seconds: number) => {
@@ -55,10 +62,16 @@ const formatDuration = (seconds: number) => {
   return `${mins}:${secs}`;
 };
 
+const createSessionId = (skillBranch: SkillBranch) => `sess_${skillBranch}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+// Hard caps on client recording so we never upload empty/silent blobs or oversized payloads.
+const MIN_AUDIO_BYTES = 1024; // ~0 sec of MediaRecorder output is < 1 KiB; below this we know nothing was captured.
+const MAX_RECORDING_SECONDS = 240; // 4-minute hard cap. Beyond this we always exceed server limits and waste user time.
+
 export function VoiceRecorder({
   userId = DEFAULT_USER_ID,
   skillBranch = "confidence",
-  initialSessionId = "sess_001",
+  initialSessionId,
   initialExerciseId = "ex_art_001",
   drillId,
   drillInstruction,
@@ -80,7 +93,9 @@ export function VoiceRecorder({
   listeningMode = false,
   listeningPrompt,
   executiveMode = false,
-  executiveSimulation
+  executiveSimulation,
+  autoChain = false,
+  hideDeveloperFields = true
 }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [permissionError, setPermissionError] = useState<string | undefined>();
@@ -101,6 +116,9 @@ export function VoiceRecorder({
         priorityFix: string;
         retryInstruction: string;
         totalScore: number;
+        identityReinforcement?: string;
+        priorityDimension?: string;
+        notMeasured?: string[];
       }
     | undefined
   >();
@@ -204,8 +222,9 @@ export function VoiceRecorder({
   const [isEvaluatingExecutive, setIsEvaluatingExecutive] = useState(false);
   const [executiveError, setExecutiveError] = useState<string | undefined>();
 
-  const [sessionId, setSessionId] = useState(initialSessionId);
-  const [exerciseId, setExerciseId] = useState(initialExerciseId);
+  const resolvedInitialSessionId = initialSessionId ?? createSessionId(skillBranch);
+  const [sessionId, setSessionId] = useState<string>(resolvedInitialSessionId);
+  const [exerciseId, setExerciseId] = useState<string>(initialExerciseId);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -218,7 +237,9 @@ export function VoiceRecorder({
   const recordedBlobRef = useRef<Blob | undefined>();
 
   useEffect(() => {
-    setSessionId(initialSessionId);
+    if (initialSessionId) {
+      setSessionId(initialSessionId);
+    }
     setExerciseId(initialExerciseId);
   }, [initialSessionId, initialExerciseId]);
 
@@ -291,6 +312,15 @@ export function VoiceRecorder({
           URL.revokeObjectURL(playbackUrl);
         }
 
+        // Empty / silent recording detection — surface a friendly message instead of an opaque server error.
+        if (blob.size < MIN_AUDIO_BYTES) {
+          setSaveState("error");
+          setSaveMessage("No audio captured. Check your mic, then try again.");
+          streamRef.current?.getTracks().forEach((track: MediaStreamTrack) => track.stop());
+          streamRef.current = null;
+          return;
+        }
+
         const newPlaybackUrl = URL.createObjectURL(blob);
         setPlaybackUrl(newPlaybackUrl);
 
@@ -330,6 +360,16 @@ export function VoiceRecorder({
           setAttemptId(result.attempt.id);
           setSaveState("saved");
           setSaveMessage(`Saved attempt ${result.attempt.id} (${formatDuration(computedDuration)}).`);
+
+          // Auto-chain: when the parent flow opts in, immediately transcribe and generate feedback so
+          // the user only has to tap once. State updates are async, so we pass attemptId/transcript
+          // explicitly through the function overrides.
+          if (autoChain) {
+            const transcript = await transcribeRecording(result.attempt.id);
+            if (transcript) {
+              await generateFeedback({ attemptId: result.attempt.id, transcript });
+            }
+          }
         } catch (error) {
           setSaveState("error");
           setSaveMessage(error instanceof Error ? error.message : "Failed to save attempt metadata");
@@ -345,11 +385,16 @@ export function VoiceRecorder({
       timerRef.current = window.setInterval(() => {
         elapsedRef.current += 1;
         setDurationSeconds(elapsedRef.current);
+        // Hard cap to stop runaway recordings before the server rejects the oversized blob.
+        if (elapsedRef.current >= MAX_RECORDING_SECONDS) {
+          setSaveMessage(`Maximum ${MAX_RECORDING_SECONDS / 60}-minute recording reached — stopping.`);
+          stopRecording();
+        }
       }, 1000);
       if (impromptuMode && impromptuTargetSeconds > 0) {
         autoStopRef.current = window.setTimeout(() => {
           stopRecording();
-        }, impromptuTargetSeconds * 1000);
+        }, Math.min(impromptuTargetSeconds, MAX_RECORDING_SECONDS) * 1000);
       }
     } catch (error) {
       setPermissionError(
@@ -629,10 +674,14 @@ export function VoiceRecorder({
     }
   };
 
-  const transcribeRecording = async () => {
-    if (!recordedBlobRef.current || !attemptId) {
+  // Returns the transcribed text on success, or null on failure (which is also reflected in
+  // transcriptionError). Accepts an explicit attemptId override so the auto-chain after save works
+  // before React state has flushed.
+  const transcribeRecording = async (overrideAttemptId?: string): Promise<string | null> => {
+    const effectiveAttemptId = overrideAttemptId ?? attemptId;
+    if (!recordedBlobRef.current || !effectiveAttemptId) {
       setTranscriptionError("Record audio first so it can be transcribed.");
-      return;
+      return null;
     }
 
     setIsTranscribing(true);
@@ -654,16 +703,21 @@ export function VoiceRecorder({
         reader.readAsDataURL(recordedBlobRef.current as Blob);
       });
 
+      const blobMime = recordedBlobRef.current.type || "audio/webm";
+      // Pick a sensible upload extension based on what the browser actually produced. iOS Safari
+      // produces audio/mp4 (AAC) — uploading it as .webm confuses some Whisper-style endpoints.
+      const extension = blobMime.includes("mp4") ? "m4a" : blobMime.includes("ogg") ? "ogg" : blobMime.includes("wav") ? "wav" : "webm";
+
       const response = await fetch("/session/recordings/transcribe", {
         method: "POST",
         headers: {
           "content-type": "application/json"
         },
         body: JSON.stringify({
-          attemptId,
+          attemptId: effectiveAttemptId,
           audioBase64,
-          mimeType: recordedBlobRef.current.type || "audio/webm",
-          fileName: `${attemptId}.webm`
+          mimeType: blobMime,
+          fileName: `${effectiveAttemptId}.${extension}`
         })
       });
 
@@ -672,16 +726,21 @@ export function VoiceRecorder({
         throw new Error(result.error ?? "Transcription failed");
       }
 
-      setTranscriptText(result.transcript.content ?? "");
+      const content = result.transcript.content ?? "";
+      setTranscriptText(content);
+      return content;
     } catch (error) {
       setTranscriptionError(error instanceof Error ? error.message : "Transcription failed");
+      return null;
     } finally {
       setIsTranscribing(false);
     }
   };
 
-  const generateFeedback = async () => {
-    if (!attemptId) {
+  const generateFeedback = async (overrides?: { attemptId?: string; transcript?: string }) => {
+    const effectiveAttemptId = overrides?.attemptId ?? attemptId;
+    const effectiveTranscript = overrides?.transcript ?? transcriptText;
+    if (!effectiveAttemptId) {
       setFeedbackError("Save an attempt before generating feedback.");
       return;
     }
@@ -696,9 +755,10 @@ export function VoiceRecorder({
           "content-type": "application/json"
         },
         body: JSON.stringify({
-          attemptId,
+          attemptId: effectiveAttemptId,
           userId,
-          skillBranch
+          skillBranch,
+          correctedTranscript: effectiveTranscript
         })
       });
 
@@ -712,7 +772,10 @@ export function VoiceRecorder({
         whatWeakened: result.feedback.whatWeakened,
         priorityFix: result.feedback.priorityFix,
         retryInstruction: result.feedback.retryInstruction,
-        totalScore: result.score.total
+        totalScore: result.score.total,
+        identityReinforcement: result.feedback.identityReinforcement,
+        priorityDimension: result.feedback.priorityDimension,
+        notMeasured: result.feedback.notMeasured
       });
 
       // Fire-and-forget: update XP, difficulty and quest progress
@@ -810,25 +873,27 @@ export function VoiceRecorder({
         </div>
       ) : null}
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <label className="grid gap-1 text-sm text-slate-700">
-          Session ID
-          <input
-            value={sessionId}
-            onChange={(event: { target: { value: string } }) => setSessionId(event.target.value)}
-            className="rounded-md border border-slate-300 px-3 py-2"
-          />
-        </label>
+      {!hideDeveloperFields ? (
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <label className="grid gap-1 text-sm text-slate-700">
+            Session ID
+            <input
+              value={sessionId}
+              onChange={(event: { target: { value: string } }) => setSessionId(event.target.value)}
+              className="rounded-md border border-slate-300 px-3 py-2"
+            />
+          </label>
 
-        <label className="grid gap-1 text-sm text-slate-700">
-          Exercise ID
-          <input
-            value={exerciseId}
-            onChange={(event: { target: { value: string } }) => setExerciseId(event.target.value)}
-            className="rounded-md border border-slate-300 px-3 py-2"
-          />
-        </label>
-      </div>
+          <label className="grid gap-1 text-sm text-slate-700">
+            Exercise ID
+            <input
+              value={exerciseId}
+              onChange={(event: { target: { value: string } }) => setExerciseId(event.target.value)}
+              className="rounded-md border border-slate-300 px-3 py-2"
+            />
+          </label>
+        </div>
+      ) : null}
 
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
         <button
@@ -869,7 +934,7 @@ export function VoiceRecorder({
       <div className="mt-4">
         <button
           type="button"
-          onClick={transcribeRecording}
+          onClick={() => void transcribeRecording()}
           disabled={isTranscribing || !attemptId}
           className="min-h-12 rounded-lg bg-indigo-600 px-4 py-3 text-base font-medium text-white disabled:cursor-not-allowed disabled:bg-indigo-300"
         >
@@ -880,15 +945,25 @@ export function VoiceRecorder({
       {transcriptionError ? <p className="mt-3 text-sm text-red-700">{transcriptionError}</p> : null}
       {transcriptText ? (
         <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3">
-          <p className="text-sm font-medium text-slate-800">Transcript</p>
-          <p className="mt-1 text-sm text-slate-700">{transcriptText}</p>
+          <p className="text-sm font-medium text-slate-800">Review transcript before feedback</p>
+          <p className="mt-1 text-xs text-slate-500">Correct names, missed words, or punctuation here. This corrected text is what the coach scores.</p>
+          <textarea
+            value={transcriptText}
+            onChange={(event: { target: { value: string } }) => setTranscriptText(event.target.value)}
+            rows={5}
+            aria-label="Editable transcript"
+            className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800"
+          />
+          <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
+            Text feedback can judge structure, clarity, concision, and content. It cannot honestly measure pitch, volume, eye contact, body language, or precise phoneme placement without audio/camera analysis.
+          </div>
         </div>
       ) : null}
 
       <div className="mt-4">
         <button
           type="button"
-          onClick={generateFeedback}
+          onClick={() => void generateFeedback()}
           disabled={isGeneratingFeedback || !transcriptText}
           className="min-h-12 rounded-lg bg-emerald-600 px-4 py-3 text-base font-medium text-white disabled:cursor-not-allowed disabled:bg-emerald-300"
         >
@@ -900,6 +975,11 @@ export function VoiceRecorder({
       {feedbackSummary ? (
         <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
           <p className="font-semibold">Executive coach feedback (score: {feedbackSummary.totalScore})</p>
+          {feedbackSummary.priorityDimension ? (
+            <p className="mt-2">
+              <strong>Primary dimension:</strong> {feedbackSummary.priorityDimension}
+            </p>
+          ) : null}
           <p className="mt-2">
             <strong>Worked:</strong> {feedbackSummary.whatWorked}
           </p>
@@ -912,6 +992,16 @@ export function VoiceRecorder({
           <p className="mt-1">
             <strong>Retry:</strong> {feedbackSummary.retryInstruction}
           </p>
+          {feedbackSummary.identityReinforcement ? (
+            <p className="mt-2 rounded-md bg-white/70 p-2">
+              <strong>Identity cue:</strong> {feedbackSummary.identityReinforcement}
+            </p>
+          ) : null}
+          {feedbackSummary.notMeasured && feedbackSummary.notMeasured.length > 0 ? (
+            <p className="mt-2 text-xs">
+              Not measured from this transcript: {feedbackSummary.notMeasured.join(", ")}
+            </p>
+          ) : null}
         </div>
       ) : null}
 

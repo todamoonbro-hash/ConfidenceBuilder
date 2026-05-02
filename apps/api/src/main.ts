@@ -1,10 +1,13 @@
-import { createHash, timingSafeEqual } from "node:crypto";
+import "./env";
+
+import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import Fastify from "fastify";
 
 import {
   getActiveQuestByUser,
   getDatabase,
   getAttemptHistoryByUser,
+  getBossChallengesForUser,
   getGameProgressByUser,
   getMediaKeyMessagesByUser,
   getModelPreferenceForTask,
@@ -29,12 +32,16 @@ import {
   saveTranscriptForAttempt,
   saveUnlockedBadges,
   saveUserQuestProgress,
+  startBossChallenge,
+  completeBossChallenge,
   startQuest
 } from "./db/store";
 import type { AiTaskType, CostMode, LlmProvider, ModelPreference, OnboardingPreferences, SkillBranch } from "./db/types";
 import { findUnlockableBadges } from "./services/badge-unlock-service";
 import { scoreArticulationHeuristic } from "./services/articulation-heuristic-service";
-import { findArticulationDrill, listArticulationDrills } from "./services/articulation-drills-service";
+import { findArticulationDrill, listArticulationDrills, listVocalWarmups } from "./services/articulation-drills-service";
+import { findBreathingProtocol, listBreathingProtocols, recommendBreathingProtocol } from "./services/breathing-service";
+import { evaluateScaffoldFill, findScaffoldFramework, listScaffoldFrameworks } from "./services/answer-scaffold-service";
 import { adjustDifficulty } from "./services/difficulty-adjustment-service";
 import { evaluateCrisisAnswer, startCrisisSimulation } from "./services/crisis-simulator-service";
 import { buildDashboardInsights } from "./services/dashboard-insights-service";
@@ -53,6 +60,7 @@ import { scoreMediaHeuristic } from "./services/media-heuristic-service";
 import { advanceQuestStep } from "./services/quest-progress-service";
 import { scoreSoundbitePractice, transformToSoundbites } from "./services/soundbite-messaging-service";
 import { transcribeAudio } from "./services/transcription-service";
+import { synthesizeSpeech } from "./services/text-to-speech-service";
 import { generateAdaptiveDailyPlan } from "./services/training-plan-generator-service";
 import { calculateXpRewards } from "./services/xp-calculation-service";
 import { INTERVIEW_BADGES, INTERVIEW_CONFIDENCE_DRILLS, INTERVIEW_FRAMEWORKS, INTERVIEW_QUESTIONS } from "./services/interview-data-service";
@@ -66,6 +74,14 @@ import { startDifficultConversationSession, appendDifficultConversationTurn, end
 import { NETWORKING_BADGES, NETWORKING_FRAMEWORKS, NETWORKING_PERSONAS, NETWORKING_SCENARIOS, NETWORKING_SUBSECTIONS } from "./services/networking-data-service";
 import { startNetworkingSession, appendNetworkingTurn, endNetworkingSession } from "./services/networking-engine-service";
 import { buildAdaptiveCoachOverview } from "./services/adaptive-coach-service";
+import {
+  buildSessionClearCookie,
+  buildSessionCookie,
+  getAuthContextFromHeaders,
+  isAuthEnabled,
+  issueSessionToken
+} from "./lib/auth";
+import { deleteUserData, exportUserData, flushPendingPersistence } from "./db/store";
 import { createScenarioDefinition, duplicateScenarioDefinition, listPublishedScenarioCards, listScenarioDefinitions, runScenarioAdminTest, setScenarioStatus, updateScenarioDefinition, validateScenario } from "./services/scenario-studio-service";
 
 
@@ -78,13 +94,30 @@ const VALID_LLM_PROVIDERS: LlmProvider[] = ["openai", "anthropic", "gemini", "de
 const VALID_AI_TASKS: AiTaskType[] = ["realtimeCoach", "transcription", "tts", "feedback", "deepReview", "cheapScoring", "fallback"];
 const VALID_COST_MODES: CostMode[] = ["lowest_cost", "balanced", "best_quality"];
 const VALID_COACH_STRICTNESS = ["supportive", "balanced", "direct", "tough"] as const;
+const DEFAULT_USER_ID = process.env.AUTH_DEFAULT_USER_ID ?? "user_001";
 
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS ?? "http://localhost:3000").split(",").map((o) => o.trim());
 
-// Simple in-memory rate limiter: max requests per window per IP
+// Bounded LRU rate limiter: max requests per window per IP, with eviction so the map cannot grow unbounded
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX ?? 300);
+const RATE_LIMIT_MAX_ENTRIES = Number(process.env.RATE_LIMIT_MAX_ENTRIES ?? 10_000);
 const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
+
+function evictExpiredRateLimitEntries(now: number): void {
+  if (rateLimitMap.size < RATE_LIMIT_MAX_ENTRIES) return;
+  for (const [ip, entry] of rateLimitMap) {
+    if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+      rateLimitMap.delete(ip);
+    }
+  }
+  // If still over capacity, drop the oldest insertion-order entries (Map preserves insertion order)
+  while (rateLimitMap.size > RATE_LIMIT_MAX_ENTRIES) {
+    const oldestKey = rateLimitMap.keys().next().value;
+    if (!oldestKey) break;
+    rateLimitMap.delete(oldestKey);
+  }
+}
 
 const ALLOWED_MIME_TYPES = new Set([
   "audio/webm",
@@ -101,7 +134,14 @@ const ALLOWED_MIME_TYPES = new Set([
 
 const app = Fastify({
   logger: true,
-  bodyLimit: Number(process.env.MAX_JSON_BODY_BYTES ?? DEFAULT_BODY_LIMIT_BYTES)
+  bodyLimit: Number(process.env.MAX_JSON_BODY_BYTES ?? DEFAULT_BODY_LIMIT_BYTES),
+  genReqId: () => randomUUID(),
+  disableRequestLogging: false
+});
+
+// Request ID propagation for log correlation
+app.addHook("onRequest", async (request, reply) => {
+  void reply.header("x-request-id", request.id);
 });
 
 // CORS
@@ -110,27 +150,63 @@ app.addHook("onRequest", async (request, reply) => {
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
     void reply.header("access-control-allow-origin", origin);
     void reply.header("access-control-allow-credentials", "true");
+    void reply.header("vary", "origin");
   }
   void reply.header("access-control-allow-methods", "GET,POST,PUT,DELETE,OPTIONS");
-  void reply.header("access-control-allow-headers", "content-type,x-admin-token");
+  void reply.header("access-control-allow-headers", "content-type,x-admin-token,authorization");
+  void reply.header("x-content-type-options", "nosniff");
+  void reply.header("referrer-policy", "no-referrer");
   if (request.method === "OPTIONS") {
     return reply.status(204).send();
   }
 });
 
-// Rate limiting
+// Rate limiting (bounded LRU; per-process — replace with Redis store before horizontal scale)
 app.addHook("onRequest", async (request, reply) => {
   const ip = request.ip ?? "unknown";
   const now = Date.now();
+  evictExpiredRateLimitEntries(now);
   const entry = rateLimitMap.get(ip);
   if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
     rateLimitMap.set(ip, { count: 1, windowStart: now });
   } else {
     entry.count++;
     if (entry.count > RATE_LIMIT_MAX) {
-      return reply.status(429).send({ ok: false, error: "rate_limit_exceeded" });
+      const retryAfterSeconds = Math.max(1, Math.ceil((RATE_LIMIT_WINDOW_MS - (now - entry.windowStart)) / 1000));
+      void reply.header("retry-after", String(retryAfterSeconds));
+      return reply.status(429).send({ ok: false, error: "rate_limit_exceeded", retryAfter: retryAfterSeconds });
     }
   }
+});
+
+// Global error handler — sanitizes errors and logs with request id; never leaks stack traces to clients
+app.setErrorHandler((error, request, reply) => {
+  const requestId = request.id;
+  const statusCode = (error as unknown as { statusCode?: number }).statusCode ?? 500;
+
+  // Validation errors from fastify schema or our zod helper
+  const validationCode = (error as unknown as { code?: string }).code;
+  if (validationCode === "FST_ERR_VALIDATION" || statusCode === 400) {
+    request.log.warn({ requestId, validationError: error.message }, "validation_failed");
+    return reply.status(400).send({ ok: false, error: "validation_failed", message: error.message, requestId });
+  }
+
+  if (statusCode === 401 || statusCode === 403) {
+    return reply.status(statusCode).send({ ok: false, error: "access_denied", requestId });
+  }
+
+  if (statusCode >= 400 && statusCode < 500) {
+    request.log.warn({ requestId, err: error.message }, "client_error");
+    return reply.status(statusCode).send({ ok: false, error: "bad_request", message: error.message, requestId });
+  }
+
+  request.log.error({ requestId, err: error }, "internal_error");
+  return reply.status(500).send({ ok: false, error: "internal_error", requestId });
+});
+
+// 404 handler
+app.setNotFoundHandler((request, reply) => {
+  return reply.status(404).send({ ok: false, error: "not_found", path: request.url, requestId: request.id });
 });
 
 
@@ -151,6 +227,12 @@ function cleanStringList(value: unknown, fallback: string[], limit: number) {
     .slice(0, limit);
 }
 
+function hasConfiguredSecret(value: string | undefined) {
+  if (!value) return false;
+  const trimmed = value.trim();
+  return Boolean(trimmed && !trimmed.startsWith("your_") && !trimmed.startsWith("replace_with") && !trimmed.startsWith("REPLACE_WITH_"));
+}
+
 function timingSafeStringEqual(a: string, b: string): boolean {
   // Pad both to the same length using a hash so length itself isn't a timing oracle
   const ha = createHash("sha256").update(a).digest();
@@ -166,27 +248,96 @@ function isAdminRequest(request: { headers: Record<string, unknown> }) {
   return timingSafeStringEqual(providedToken, configuredToken);
 }
 
+// Returns the authenticated userId, or sends 401 and returns null if auth is required and missing.
+// When AUTH_ENABLED=false (default), this returns the fallback `claimedUserId` so legacy single-user
+// flows keep working — the caller is then responsible for treating the userId as untrusted in tests/dev.
+function requireAuthenticatedUser(
+  request: { headers: Record<string, unknown> },
+  reply: { code: (statusCode: number) => unknown; status: (statusCode: number) => unknown },
+  claimedUserId?: string
+): string | null {
+  if (!isAuthEnabled()) {
+    return claimedUserId ?? DEFAULT_USER_ID;
+  }
+  const ctx = getAuthContextFromHeaders(request.headers);
+  if (!ctx.ok) {
+    void (reply.status as (s: number) => unknown)(401);
+    return null;
+  }
+  // If a userId was claimed in the route, it MUST match the authenticated principal.
+  if (claimedUserId && claimedUserId !== ctx.userId) {
+    void (reply.status as (s: number) => unknown)(403);
+    return null;
+  }
+  return ctx.userId;
+}
+
 app.get("/health", async () => ({ status: "ok", service: "confidencebuilder-api", date: new Date().toISOString() }));
+
+// Auth endpoints — only meaningful when AUTH_ENABLED=true. Otherwise they return auth_disabled
+// so the frontend can detect the mode and skip rendering login UI.
+app.get("/v1/auth/status", async () => ({ ok: true, authEnabled: isAuthEnabled() }));
+
+app.post("/v1/auth/login", async (request, reply) => {
+  if (!isAuthEnabled()) {
+    reply.code(400);
+    return { ok: false, error: "auth_disabled" };
+  }
+  // For now this is a single-user installation: any client that knows AUTH_DEFAULT_USER_ID and
+  // AUTH_LOGIN_PASSPHRASE can mint a session. Replace with a real provider (Auth.js / Clerk /
+  // Supabase) before exposing this beyond a controlled deployment.
+  const body = (request.body ?? {}) as { passphrase?: string; userId?: string };
+  const expected = process.env.AUTH_LOGIN_PASSPHRASE;
+  if (!expected || expected.length < 8) {
+    reply.code(503);
+    return { ok: false, error: "auth_login_not_configured" };
+  }
+  const provided = typeof body.passphrase === "string" ? body.passphrase : "";
+  if (!timingSafeStringEqual(provided, expected)) {
+    reply.code(401);
+    return { ok: false, error: "invalid_credentials" };
+  }
+  const userId = typeof body.userId === "string" && body.userId.trim() ? body.userId.trim() : DEFAULT_USER_ID;
+  const token = issueSessionToken(userId);
+  reply.header("set-cookie", buildSessionCookie(token, { secure: process.env.NODE_ENV === "production" }));
+  return { ok: true, userId, token };
+});
+
+app.post("/v1/auth/logout", async (_request, reply) => {
+  reply.header("set-cookie", buildSessionClearCookie({ secure: process.env.NODE_ENV === "production" }));
+  return { ok: true };
+});
+
+app.get("/v1/auth/me", async (request, reply) => {
+  if (!isAuthEnabled()) return { ok: true, authEnabled: false, userId: DEFAULT_USER_ID };
+  const ctx = getAuthContextFromHeaders(request.headers as Record<string, unknown>);
+  if (!ctx.ok) {
+    reply.code(401);
+    return { ok: false, error: ctx.reason };
+  }
+  return { ok: true, authEnabled: true, userId: ctx.userId, expiresAt: new Date(ctx.claims.exp * 1000).toISOString() };
+});
 
 app.get("/v1/config/status", async () => ({
   ok: true,
   persistence: getPersistenceStatus(),
   providers: {
-    openai: Boolean(process.env.OPENAI_API_KEY),
-    openrouter: Boolean(process.env.OPENROUTER_API_KEY),
-    deepseek: Boolean(process.env.DEEPSEEK_API_KEY),
-    mistral: Boolean(process.env.MISTRAL_API_KEY),
-    xai: Boolean(process.env.XAI_API_KEY),
-    groq: Boolean(process.env.GROQ_API_KEY),
-    together: Boolean(process.env.TOGETHER_API_KEY),
-    fireworks: Boolean(process.env.FIREWORKS_API_KEY),
-    anthropicCompat: Boolean(process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_OPENAI_COMPAT_BASE_URL),
-    geminiCompat: Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_OPENAI_COMPAT_BASE_URL),
+    openai: hasConfiguredSecret(process.env.OPENAI_API_KEY),
+    openrouter: hasConfiguredSecret(process.env.OPENROUTER_API_KEY),
+    deepseek: hasConfiguredSecret(process.env.DEEPSEEK_API_KEY),
+    mistral: hasConfiguredSecret(process.env.MISTRAL_API_KEY),
+    xai: hasConfiguredSecret(process.env.XAI_API_KEY),
+    groq: hasConfiguredSecret(process.env.GROQ_API_KEY),
+    together: hasConfiguredSecret(process.env.TOGETHER_API_KEY),
+    fireworks: hasConfiguredSecret(process.env.FIREWORKS_API_KEY),
+    anthropicCompat: Boolean(hasConfiguredSecret(process.env.ANTHROPIC_API_KEY) && process.env.ANTHROPIC_OPENAI_COMPAT_BASE_URL),
+    geminiCompat: Boolean(hasConfiguredSecret(process.env.GEMINI_API_KEY) && process.env.GEMINI_OPENAI_COMPAT_BASE_URL),
     local: Boolean(process.env.LOCAL_LLM_BASE_URL)
   },
   voice: {
-    transcriptionConfigured: Boolean(process.env.OPENAI_API_KEY),
-    realtimeConfigured: Boolean(process.env.OPENAI_API_KEY && process.env.OPENAI_REALTIME_MODEL)
+    transcriptionConfigured: hasConfiguredSecret(process.env.OPENAI_API_KEY),
+    realtimeConfigured: Boolean(hasConfiguredSecret(process.env.OPENAI_API_KEY) && process.env.OPENAI_REALTIME_MODEL),
+    ttsConfigured: hasConfiguredSecret(process.env.OPENAI_API_KEY)
   }
 }));
 
@@ -206,6 +357,40 @@ app.post("/v1/quests/:questId/start", async (request) => {
   }
 
   return { ok: true, progress: started };
+});
+
+app.get("/v1/boss-challenges/:userId", async (request) => {
+  const params = request.params as { userId: string };
+  return { ok: true, challenges: getBossChallengesForUser(params.userId) };
+});
+
+app.post("/v1/boss-challenges/:challengeId/start", async (request) => {
+  const params = request.params as { challengeId: string };
+  const body = request.body as { userId: string };
+  const attempt = startBossChallenge(body.userId, params.challengeId);
+
+  if (!attempt) {
+    return { ok: false, error: "boss_challenge_locked_or_not_found" };
+  }
+
+  return { ok: true, attempt };
+});
+
+app.post("/v1/boss-challenges/:attemptId/complete", async (request) => {
+  const params = request.params as { attemptId: string };
+  const body = request.body as { performanceScore?: number };
+  const performanceScore = Number(body.performanceScore);
+
+  if (!Number.isFinite(performanceScore)) {
+    return { ok: false, error: "invalid_performance_score" };
+  }
+
+  const attempt = completeBossChallenge(params.attemptId, performanceScore);
+  if (!attempt) {
+    return { ok: false, error: "boss_challenge_attempt_not_found" };
+  }
+
+  return { ok: true, attempt };
 });
 
 app.get("/v1/training/adaptive-plan/:userId", async (request) => {
@@ -468,6 +653,47 @@ app.get("/v1/dashboard/:userId", async (request) => {
 });
 
 app.get("/v1/modules/articulation/drills", async () => ({ ok: true, drills: listArticulationDrills() }));
+app.get("/v1/modules/articulation/warmups", async () => ({ ok: true, warmups: listVocalWarmups() }));
+
+// Breathing / grounding — gates every session before the first rep.
+app.get("/v1/modules/breathing/protocols", async () => ({ ok: true, protocols: listBreathingProtocols() }));
+app.get("/v1/modules/breathing/protocols/:id", async (request, reply) => {
+  const params = request.params as { id: string };
+  const protocol = findBreathingProtocol(params.id as Parameters<typeof findBreathingProtocol>[0]);
+  if (!protocol) {
+    reply.code(404);
+    return { ok: false, error: "protocol_not_found" };
+  }
+  return { ok: true, protocol };
+});
+app.post("/v1/modules/breathing/recommend", async (request) => {
+  const body = (request.body ?? {}) as Parameters<typeof recommendBreathingProtocol>[0];
+  return { ok: true, recommended: recommendBreathingProtocol(body ?? {}) };
+});
+
+// Answer scaffolds — STAR / CAR / PREP / SCQA / BLUF / PYRAMID interactive frameworks.
+app.get("/v1/modules/scaffolds/frameworks", async () => ({ ok: true, frameworks: listScaffoldFrameworks() }));
+app.get("/v1/modules/scaffolds/frameworks/:id", async (request, reply) => {
+  const params = request.params as { id: string };
+  const framework = findScaffoldFramework(params.id as Parameters<typeof findScaffoldFramework>[0]);
+  if (!framework) {
+    reply.code(404);
+    return { ok: false, error: "framework_not_found" };
+  }
+  return { ok: true, framework };
+});
+app.post("/v1/modules/scaffolds/evaluate", async (request, reply) => {
+  const body = (request.body ?? {}) as Parameters<typeof evaluateScaffoldFill>[0];
+  if (!body || typeof body !== "object" || !body.frameworkId || !body.segments) {
+    reply.code(400);
+    return { ok: false, error: "missing_framework_or_segments" };
+  }
+  if (!findScaffoldFramework(body.frameworkId)) {
+    reply.code(404);
+    return { ok: false, error: "framework_not_found" };
+  }
+  return { ok: true, evaluation: evaluateScaffoldFill(body) };
+});
 app.get("/v1/modules/media/drills", async () => ({ ok: true, drills: listMediaDrills() }));
 app.get("/v1/modules/reading/passages", async (request) => {
   const query = ((request as unknown as { query?: Record<string, string | undefined> }).query ?? {}) as {
@@ -681,9 +907,34 @@ app.post("/v1/recordings/transcribe", async (request) => {
   }
 });
 
+app.post("/v1/audio/speech", async (request) => {
+  const body = (request.body ?? {}) as {
+    text?: string;
+    style?: "natural" | "calm" | "energetic";
+  };
+
+  if (!body.text?.trim()) {
+    return { ok: false, error: "missing_tts_text" };
+  }
+
+  try {
+    const speech = await synthesizeSpeech({
+      text: body.text,
+      style: body.style
+    });
+    return { ok: true, speech };
+  } catch (error) {
+    if (error instanceof Error && error.message === "missing_openai_api_key") {
+      return { ok: false, error: "tts_not_configured" };
+    }
+
+    return { ok: false, error: "tts_failed" };
+  }
+});
+
 app.post("/v1/attempts/:attemptId/feedback/generate", async (request) => {
   const params = request.params as { attemptId: string };
-  const body = request.body as { userId: string; skillBranch?: SkillBranch };
+  const body = request.body as { userId: string; skillBranch?: SkillBranch; correctedTranscript?: string };
 
   const attempt = getAttemptById(params.attemptId);
   if (!attempt) {
@@ -693,6 +944,18 @@ app.post("/v1/attempts/:attemptId/feedback/generate", async (request) => {
   const transcript = getTranscriptByAttemptId(params.attemptId);
   if (!transcript || !transcript.content.trim()) {
     return { ok: false, error: "transcript_not_found" };
+  }
+
+  const effectiveTranscript =
+    typeof body.correctedTranscript === "string" && body.correctedTranscript.trim()
+      ? body.correctedTranscript.trim()
+      : transcript.content.trim();
+
+  if (effectiveTranscript !== transcript.content.trim()) {
+    saveTranscriptForAttempt({
+      attemptId: attempt.id,
+      content: effectiveTranscript
+    });
   }
 
   const db = getDatabase();
@@ -710,7 +973,7 @@ app.post("/v1/attempts/:attemptId/feedback/generate", async (request) => {
 
   try {
     const feedback = await generateAiFeedback({
-      transcript: transcript.content,
+      transcript: effectiveTranscript,
       exerciseType: exercise?.drillType ?? "articulation",
       userGoals: userGoals.length > 0 ? userGoals : [profile.preference?.mainGoal ?? "confidence"],
       sessionLevel: profile.profile?.levelBand ?? "foundation",
@@ -782,14 +1045,25 @@ app.post("/v1/attempts/:attemptId/feedback/generate", async (request) => {
       situation: exercise?.title ?? exercise?.drillType ?? "speaking practice",
       modelProvider: modelPreference?.provider,
       modelName: modelPreference?.model,
-      transcriptSummary: transcript.content.split(/\s+/).slice(0, 24).join(" "),
+      transcriptSummary: effectiveTranscript.split(/\s+/).slice(0, 24).join(" "),
       observedWeakness: feedback.whatWeakened,
       priorityFix: feedback.priorityFix,
       nextDrill: feedback.retryInstruction,
       scoreTotal: total
     });
 
-    return { ok: true, feedback: feedbackItem, score, memory, modelPreference };
+    return {
+      ok: true,
+      feedback: {
+        ...feedbackItem,
+        identityReinforcement: feedback.identityReinforcement,
+        priorityDimension: feedback.priorityDimension,
+        notMeasured: feedback.notMeasured
+      },
+      score,
+      memory,
+      modelPreference
+    };
   } catch (error) {
     if (error instanceof Error && (error.message === "missing_openai_api_key" || error.message.startsWith("missing_provider_api_key"))) {
       return { ok: false, error: "feedback_not_configured" };
@@ -1690,6 +1964,40 @@ app.post("/v1/onboarding", async (request) => {
   return { ok: true, ...saveOnboardingPreferences(body) };
 });
 
+// Account hygiene — GDPR/CCPA basics. When AUTH_ENABLED, only the authenticated user can export/delete
+// their own data; admins with x-admin-token can act on any user.
+app.get("/v1/users/:userId/export", async (request, reply) => {
+  const params = request.params as { userId: string };
+  const isAdmin = isAdminRequest(request as unknown as { headers: Record<string, unknown> });
+  if (!isAdmin) {
+    const authedUserId = requireAuthenticatedUser(request as unknown as { headers: Record<string, unknown> }, reply, params.userId);
+    if (!authedUserId) return { ok: false, error: "access_denied" };
+  }
+  await flushPendingPersistence();
+  reply.header("content-type", "application/json");
+  reply.header("content-disposition", `attachment; filename="confidencebuilder-export-${params.userId}.json"`);
+  return { ok: true, ...exportUserData(params.userId) };
+});
+
+app.delete("/v1/users/:userId", async (request, reply) => {
+  const params = request.params as { userId: string };
+  const isAdmin = isAdminRequest(request as unknown as { headers: Record<string, unknown> });
+  if (!isAdmin) {
+    const authedUserId = requireAuthenticatedUser(request as unknown as { headers: Record<string, unknown> }, reply, params.userId);
+    if (!authedUserId) return { ok: false, error: "access_denied" };
+  }
+  // Require an explicit confirmation token to make accidental deletes harder. The token must match the
+  // userId, ensuring the caller knows whose data they're deleting.
+  const body = (request.body ?? {}) as { confirmation?: string };
+  if (body.confirmation !== params.userId) {
+    reply.code(400);
+    return { ok: false, error: "missing_or_invalid_confirmation", expected: "confirmation must equal the userId" };
+  }
+  const result = deleteUserData(params.userId);
+  await flushPendingPersistence();
+  return { ok: true, ...result };
+});
+
 app.get("/v1/training/profile/:userId", async (request) => {
   const params = request.params as { userId: string };
   const db = getDatabase();
@@ -1698,6 +2006,7 @@ app.get("/v1/training/profile/:userId", async (request) => {
   const activeQuest = getActiveQuestByUser(params.userId);
   const userBadges = db.userBadges.filter((item) => item.userId === params.userId);
   const unlockedBadgeIds = new Set(userBadges.map((item) => item.badgeId));
+  const nextAvailableBossChallenge = getBossChallengesForUser(params.userId).find((item) => !item.locked);
 
   return {
     ok: true,
@@ -1714,13 +2023,37 @@ app.get("/v1/training/profile/:userId", async (request) => {
         db.userDailyMissionProgress.find((progress) => progress.userId === params.userId && progress.missionId === mission.id)?.completed
       )
     })),
-    weeklyBossChallengePreview: db.weeklyBossChallenges[0]
+    weeklyBossChallengePreview: nextAvailableBossChallenge?.challenge
   };
 });
 
 const start = async () => {
   const port = Number(process.env.PORT ?? process.env.API_PORT ?? "4000");
-  await app.listen({ host: "0.0.0.0", port });
+  // Bind 127.0.0.1 by default; require explicit BIND_HOST=0.0.0.0 to expose beyond the local machine.
+  const host = process.env.BIND_HOST ?? "127.0.0.1";
+
+  // Fail-fast in production if the admin token is unset — silent admin-disabled is worse than a loud crash.
+  if (process.env.NODE_ENV === "production" && !process.env.ADMIN_API_TOKEN) {
+    app.log.error("ADMIN_API_TOKEN must be set when NODE_ENV=production");
+    throw new Error("admin_token_not_configured");
+  }
+
+  await app.listen({ host, port });
+  app.log.info({ host, port }, "api_started");
 };
+
+const shutdown = async (signal: string) => {
+  app.log.info({ signal }, "shutdown_initiated");
+  try {
+    await app.close();
+  } catch (error) {
+    app.log.error({ err: error }, "shutdown_error");
+  } finally {
+    process.exit(0);
+  }
+};
+
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
+process.on("SIGINT", () => void shutdown("SIGINT"));
 
 void start();

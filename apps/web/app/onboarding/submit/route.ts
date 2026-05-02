@@ -25,5 +25,6 @@ export async function POST(request: Request) {
     cache: "no-store"
   });
 
-  return Response.redirect(new URL(`/dashboard?userId=${encodeURIComponent(userId)}`, request.url), 302);
+  // Land on the Today screen (the daily-session launcher), not the analytics dashboard.
+  return Response.redirect(new URL("/", request.url), 303);
 }

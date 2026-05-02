@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { resolveUserId } from "../lib/user";
 
 type DashboardSummary = {
@@ -7,9 +8,11 @@ type DashboardSummary = {
   milestone: { nextSkillFocus: string };
 };
 
+const API_BASE = process.env.API_BASE_URL ?? "http://localhost:4000";
+
 async function loadHomeSummary(userId: string): Promise<DashboardSummary | null> {
   try {
-    const response = await fetch(`${process.env.API_BASE_URL ?? "http://localhost:4000"}/v1/dashboard/${encodeURIComponent(userId)}`, { cache: "no-store" });
+    const response = await fetch(`${API_BASE}/v1/dashboard/${encodeURIComponent(userId)}`, { cache: "no-store" });
     if (!response.ok) return null;
     const payload = (await response.json()) as { dashboard?: DashboardSummary };
     return payload.dashboard ?? null;
@@ -18,8 +21,24 @@ async function loadHomeSummary(userId: string): Promise<DashboardSummary | null>
   }
 }
 
+// New users have no training profile yet — send them straight to onboarding so the first 10 minutes
+// produce a tailored plan instead of dropping them on a generic dashboard.
+async function hasCompletedOnboarding(userId: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE}/v1/training/profile/${encodeURIComponent(userId)}`, { cache: "no-store" });
+    if (!response.ok) return false;
+    const payload = (await response.json()) as { preference?: unknown; profile?: unknown };
+    return Boolean(payload.preference && payload.profile);
+  } catch {
+    return false;
+  }
+}
+
 export default async function HomePage() {
   const userId = resolveUserId();
+  if (!(await hasCompletedOnboarding(userId))) {
+    redirect("/onboarding");
+  }
   const summary = await loadHomeSummary(userId);
 
   const drillTitle = summary?.nextRecommendedDrill?.title ?? "Run a baseline speaking rep";
@@ -56,6 +75,12 @@ export default async function HomePage() {
             className="inline-flex min-h-12 items-center rounded-lg bg-brand-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition-all hover:bg-brand-700 hover:-translate-y-px"
           >
             Start session
+          </a>
+          <a
+            href="/baseline"
+            className="inline-flex min-h-12 items-center rounded-lg border border-brand-200 bg-white px-5 py-3 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
+          >
+            Run baseline
           </a>
           <a
             href="/practice"

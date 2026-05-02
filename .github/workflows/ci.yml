@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  typecheck-test-build:
+    name: Typecheck + Test + Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck all workspaces
+        run: npm run typecheck
+
+      - name: API tests (engine, services, persistence)
+        run: npm run -w @confidencebuilder/api test
+
+      - name: Build all workspaces
+        run: npm run build
+
+  smoke-e2e:
+    name: Web Playwright smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: typecheck-test-build
+    # Run smoke after the cheap fast checks succeed; keeps total wall-clock predictable.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+
+      - name: Build API
+        run: npm run -w @confidencebuilder/api build
+
+      - name: Build web
+        run: npm run -w @confidencebuilder/web build
+        env:
+          NEXT_PUBLIC_DEFAULT_USER_ID: user_001
+
+      - name: Run Playwright smoke
+        run: npx playwright test
+        working-directory: apps/web
+        env:
+          API_BASE_URL: http://127.0.0.1:4000
+          NEXT_PUBLIC_DEFAULT_USER_ID: user_001
+          CONFIDENCEBUILDER_DISABLE_PERSISTENCE: "true"

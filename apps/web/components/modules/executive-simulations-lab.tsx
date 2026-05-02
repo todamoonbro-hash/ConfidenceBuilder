@@ -87,7 +87,6 @@ export function ExecutiveSimulationsLab() {
         <VoiceRecorder
           userId={DEFAULT_USER_ID}
           skillBranch="executive"
-          initialSessionId="sess_001"
           initialExerciseId={`executive_${simulation.mode}`}
           drillInstruction="Answer with executive structure: headline, two facts, one commitment."
           drillExamplePhrase={simulation.openingQuestion}

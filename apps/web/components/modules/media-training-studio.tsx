@@ -254,7 +254,6 @@ export function MediaTrainingStudio({ drills }: MediaTrainingStudioProps) {
         <VoiceRecorder
           userId={DEFAULT_USER_ID}
           skillBranch="media"
-          initialSessionId="sess_001"
           initialExerciseId={selectedDrill.id}
           drillId={selectedDrill.id}
           drillInstruction={selectedDrill.instruction}

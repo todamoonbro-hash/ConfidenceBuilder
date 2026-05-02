@@ -46,17 +46,46 @@ function loadInitialSnapshot(): DatabaseSnapshot {
 
 let snapshot: DatabaseSnapshot = loadInitialSnapshot();
 
-function persistSnapshot() {
+// Single-process write serialization. Concurrent commit() calls would otherwise interleave their
+// JSON.stringify of the in-memory snapshot with each other's mutations. We serialize through a Promise
+// chain so each persist completes before the next starts, and we always serialize the LATEST snapshot
+// at write time (not at enqueue time).
+let writeQueue: Promise<void> = Promise.resolve();
+let pendingDirty = false;
+
+function flushSnapshot(): void {
   if (persistenceDisabled) return;
   mkdirSync(dirname(databaseFilePath), { recursive: true });
-  const temporaryPath = `${databaseFilePath}.tmp`;
+  const temporaryPath = `${databaseFilePath}.tmp.${process.pid}`;
+  // Serialize at flush time so if N commits coalesce into one flush, the on-disk file reflects the
+  // final post-mutation state — never an intermediate one.
   writeFileSync(temporaryPath, JSON.stringify(snapshot, null, 2));
   renameSync(temporaryPath, databaseFilePath);
+}
+
+function persistSnapshot(): void {
+  if (persistenceDisabled) return;
+  pendingDirty = true;
+  writeQueue = writeQueue
+    .then(() => {
+      if (!pendingDirty) return;
+      pendingDirty = false;
+      flushSnapshot();
+    })
+    .catch(() => {
+      // Reset queue on error so subsequent writes can still proceed.
+      pendingDirty = true;
+    });
 }
 
 function commit<T>(value: T): T {
   persistSnapshot();
   return value;
+}
+
+// Test / shutdown hook — wait for any in-flight persist to complete.
+export async function flushPendingPersistence(): Promise<void> {
+  await writeQueue;
 }
 
 function generateTrainingProfile(preference: OnboardingPreferences): TrainingProfile {
@@ -538,4 +567,87 @@ export function getOverview() {
     weeklyBossChallenges: db.weeklyBossChallenges.length,
     bossChallengeAttempts: db.bossChallengeAttempts.length
   };
+}
+
+// Account hygiene — GDPR/CCPA basics. Export gathers everything we have on a user; delete purges it.
+export function exportUserData(userId: string): {
+  exportedAt: string;
+  userId: string;
+  data: Record<string, unknown[]>;
+} {
+  const db = snapshot;
+  const sessionIds = new Set(db.trainingSessions.filter((item) => item.userId === userId).map((item) => item.id));
+  const userAttempts = db.attempts.filter((item) => sessionIds.has(item.sessionId));
+  const userAttemptIds = new Set(userAttempts.map((item) => item.id));
+
+  return {
+    exportedAt: new Date().toISOString(),
+    userId,
+    data: {
+      onboardingPreferences: db.onboardingPreferences.filter((item) => item.userId === userId),
+      trainingProfiles: db.trainingProfiles.filter((item) => item.userId === userId),
+      gameProgressions: db.gameProgressions.filter((item) => item.userId === userId),
+      personalCoachProfiles: db.personalCoachProfiles.filter((item) => item.userId === userId),
+      sessionMemories: db.sessionMemories.filter((item) => item.userId === userId),
+      mediaKeyMessageSets: db.mediaKeyMessageSets.filter((item) => item.userId === userId),
+      userBadges: db.userBadges.filter((item) => item.userId === userId),
+      userQuestProgress: db.userQuestProgress.filter((item) => item.userId === userId),
+      userDailyMissionProgress: db.userDailyMissionProgress.filter((item) => item.userId === userId),
+      bossChallengeAttempts: db.bossChallengeAttempts.filter((item) => item.userId === userId),
+      goals: db.goals.filter((item) => item.userId === userId),
+      trainingSessions: db.trainingSessions.filter((item) => item.userId === userId),
+      attempts: userAttempts,
+      transcripts: db.transcripts.filter((item) => userAttemptIds.has(item.attemptId)),
+      feedbackItems: db.feedbackItems.filter((item) => userAttemptIds.has(item.attemptId)),
+      scores: db.scores.filter((item) => userAttemptIds.has(item.attemptId)),
+      recordings: db.recordings.filter((item) => userAttemptIds.has(item.attemptId))
+    }
+  };
+}
+
+export function deleteUserData(userId: string): { deletedAt: string; userId: string; counts: Record<string, number> } {
+  const db = snapshot;
+  const sessionIds = new Set(db.trainingSessions.filter((item) => item.userId === userId).map((item) => item.id));
+  const attemptIds = new Set(db.attempts.filter((item) => sessionIds.has(item.sessionId)).map((item) => item.id));
+
+  const counts = {
+    onboardingPreferences: db.onboardingPreferences.filter((item) => item.userId === userId).length,
+    trainingProfiles: db.trainingProfiles.filter((item) => item.userId === userId).length,
+    gameProgressions: db.gameProgressions.filter((item) => item.userId === userId).length,
+    personalCoachProfiles: db.personalCoachProfiles.filter((item) => item.userId === userId).length,
+    sessionMemories: db.sessionMemories.filter((item) => item.userId === userId).length,
+    mediaKeyMessageSets: db.mediaKeyMessageSets.filter((item) => item.userId === userId).length,
+    userBadges: db.userBadges.filter((item) => item.userId === userId).length,
+    userQuestProgress: db.userQuestProgress.filter((item) => item.userId === userId).length,
+    userDailyMissionProgress: db.userDailyMissionProgress.filter((item) => item.userId === userId).length,
+    bossChallengeAttempts: db.bossChallengeAttempts.filter((item) => item.userId === userId).length,
+    goals: db.goals.filter((item) => item.userId === userId).length,
+    trainingSessions: sessionIds.size,
+    attempts: attemptIds.size,
+    transcripts: db.transcripts.filter((item) => attemptIds.has(item.attemptId)).length,
+    feedbackItems: db.feedbackItems.filter((item) => attemptIds.has(item.attemptId)).length,
+    scores: db.scores.filter((item) => attemptIds.has(item.attemptId)).length,
+    recordings: db.recordings.filter((item) => attemptIds.has(item.attemptId)).length
+  };
+
+  snapshot.onboardingPreferences = db.onboardingPreferences.filter((item) => item.userId !== userId);
+  snapshot.trainingProfiles = db.trainingProfiles.filter((item) => item.userId !== userId);
+  snapshot.gameProgressions = db.gameProgressions.filter((item) => item.userId !== userId);
+  snapshot.personalCoachProfiles = db.personalCoachProfiles.filter((item) => item.userId !== userId);
+  snapshot.sessionMemories = db.sessionMemories.filter((item) => item.userId !== userId);
+  snapshot.mediaKeyMessageSets = db.mediaKeyMessageSets.filter((item) => item.userId !== userId);
+  snapshot.userBadges = db.userBadges.filter((item) => item.userId !== userId);
+  snapshot.userQuestProgress = db.userQuestProgress.filter((item) => item.userId !== userId);
+  snapshot.userDailyMissionProgress = db.userDailyMissionProgress.filter((item) => item.userId !== userId);
+  snapshot.bossChallengeAttempts = db.bossChallengeAttempts.filter((item) => item.userId !== userId);
+  snapshot.goals = db.goals.filter((item) => item.userId !== userId);
+  snapshot.trainingSessions = db.trainingSessions.filter((item) => item.userId !== userId);
+  snapshot.attempts = db.attempts.filter((item) => !attemptIds.has(item.id));
+  snapshot.transcripts = db.transcripts.filter((item) => !attemptIds.has(item.attemptId));
+  snapshot.feedbackItems = db.feedbackItems.filter((item) => !attemptIds.has(item.attemptId));
+  snapshot.scores = db.scores.filter((item) => !attemptIds.has(item.attemptId));
+  snapshot.recordings = db.recordings.filter((item) => !attemptIds.has(item.attemptId));
+
+  persistSnapshot();
+  return { deletedAt: new Date().toISOString(), userId, counts };
 }

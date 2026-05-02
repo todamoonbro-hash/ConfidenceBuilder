@@ -6,6 +6,7 @@ AI Speaker Confidence Coach monorepo scaffold.
 - `apps/web`: Next.js voice-first client
 - `apps/api`: Fastify API + realtime runtime endpoints
 - `apps/worker`: background job worker
+- `apps/desktop`: Electron launcher for the local app
 
 ## Packages
 - `packages/types`: shared schemas/types
@@ -23,6 +24,15 @@ AI Speaker Confidence Coach monorepo scaffold.
 3. Fill in required values in `.env.local` (do not commit secrets).
 4. Start dev services:
    - `npm run dev`
+
+## Desktop launcher
+On Windows, double-click `Open ConfidenceBuilder.cmd` from the repo root.
+
+You can also run:
+
+- `npm run desktop`
+
+The desktop launcher starts or reuses the local API on `http://localhost:4000` and web app on `http://localhost:3000`, then opens ConfidenceBuilder in a desktop window.
 
 ## Production build and run
 From repo root:

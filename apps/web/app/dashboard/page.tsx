@@ -128,6 +128,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     loadAdaptivePlan(userId)
   ]);
   const dashboard = data?.dashboard;
+  const adaptiveDrills = adaptivePlan?.drills ?? [];
+  const dailyMissions = profile?.dailyMissions ?? [];
 
   if (!dashboard) {
     return (
@@ -228,15 +230,15 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </article>
       </section>
 
-      {adaptivePlan && adaptivePlan.drills.length > 0 && (
+      {adaptivePlan && adaptiveDrills.length > 0 && (
         <section className="mt-6">
           <h3 className="mb-4 text-lg font-semibold text-slate-900">Today's adaptive plan</h3>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {adaptivePlan.drills.map((drill) => (
+            {adaptiveDrills.map((drill) => (
               <article key={drill.id} className="rounded-lg border border-brand-100 bg-white p-5">
                 <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">{drill.skillBranch}</p>
                 <h4 className="mt-2 text-sm font-semibold text-slate-900">{drill.title}</h4>
-                <p className="mt-1 text-xs text-slate-500">~{drill.estimatedMinutes} min · {adaptivePlan.difficulty} difficulty</p>
+                <p className="mt-1 text-xs text-slate-500">~{drill.estimatedMinutes} min - {adaptivePlan.difficulty} difficulty</p>
                 <a href="/session" className="mt-3 inline-flex min-h-9 items-center rounded-md bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700">Start</a>
               </article>
             ))}
@@ -246,14 +248,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
       {profile && (
         <>
-          {profile.dailyMissions.length > 0 && (
+          {dailyMissions.length > 0 && (
             <section className="mt-6">
               <h3 className="mb-4 text-lg font-semibold text-slate-900">Daily missions</h3>
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {profile.dailyMissions.map((mission) => (
+                {dailyMissions.map((mission) => (
                   <article key={mission.id} className={`rounded-lg border p-4 ${mission.completed ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}>
                     <div className="flex items-start gap-3">
-                      <span className={`mt-0.5 text-lg ${mission.completed ? "text-emerald-600" : "text-slate-400"}`}>{mission.completed ? "✓" : "○"}</span>
+                      <span className={`mt-0.5 text-xs font-semibold uppercase tracking-wide ${mission.completed ? "text-emerald-600" : "text-slate-400"}`}>{mission.completed ? "done" : "open"}</span>
                       <div>
                         <p className="text-sm font-medium text-slate-900">{mission.label}</p>
                         <p className="mt-1 text-xs text-slate-500">Target: {mission.targetCount}</p>
@@ -273,7 +275,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 <h4 className="mt-2 text-base font-semibold text-slate-900">{profile.weeklyBossChallengePreview.title}</h4>
                 <p className="mt-2 text-sm text-slate-600">{profile.weeklyBossChallengePreview.description}</p>
                 <p className="mt-3 text-sm font-medium text-purple-700">+{profile.weeklyBossChallengePreview.rewardXp} XP on completion</p>
-                <a href="/session" className="mt-4 inline-flex min-h-10 items-center rounded-md bg-purple-700 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-800">Accept challenge</a>
+                <a href={`/boss-challenges/start?challengeId=${encodeURIComponent(profile.weeklyBossChallengePreview.id)}`} className="mt-4 inline-flex min-h-10 items-center rounded-md bg-purple-700 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-800">Accept challenge</a>
               </article>
             </section>
           )}
@@ -292,3 +294,4 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     </>
   );
 }
+

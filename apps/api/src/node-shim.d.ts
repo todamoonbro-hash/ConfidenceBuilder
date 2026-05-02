@@ -3,5 +3,7 @@ declare const process: {
 };
 
 declare class Buffer extends Uint8Array {
-  static from(data: string, encoding?: string): Buffer;
+  static from(data: string | Buffer | ArrayBufferLike | ArrayLike<number>, encoding?: string): Buffer;
+  static isBuffer(value: unknown): value is Buffer;
+  toString(encoding?: string): string;
 }
