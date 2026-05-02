@@ -5,9 +5,6 @@ import { useEffect, useRef, useState } from "react";
 // Animated breath-coach component. Walks the user through a single breathing protocol's steps,
 // expanding/contracting a circle to the rhythm and announcing each phase. When all steps complete
 // it calls onComplete() so the parent flow can advance.
-//
-// The visual cue (expanding circle on inhale, contracting on exhale, holding still on hold) is the
-// difference between an app that "shows you how to breathe" and one that actually paces you.
 
 export type BreathingStep = {
   label: string;
@@ -60,58 +57,61 @@ const PHASE_LABELS: Record<Phase, string> = {
 };
 
 export function BreathingTimer({ protocol, onComplete, onSkip }: BreathingTimerProps) {
-  const [stepIndex, setStepIndex] = useState(0);
-  const [secondsLeft, setSecondsLeft] = useState(protocol.steps[0]?.seconds ?? 0);
-  const [running, setRunning] = useState(false);
+  const [stepIndex, setStepIndex] = useState<number>(0);
+  const [secondsLeft, setSecondsLeft] = useState<number>(protocol.steps[0]?.seconds ?? 0);
+  const [running, setRunning] = useState<boolean>(false);
+  const [completed, setCompleted] = useState<boolean>(false);
+
+  // Refs let the interval read current values without depending on stale closure scope.
   const intervalRef = useRef<number | null>(null);
-  const completedRef = useRef(false);
+  const stepIndexRef = useRef<number>(0);
+  const secondsLeftRef = useRef<number>(protocol.steps[0]?.seconds ?? 0);
+  const completedRef = useRef<boolean>(false);
 
   const step = protocol.steps[stepIndex];
   const phase = step ? classifyPhase(step.label) : "neutral";
   const stepTotal = step?.seconds ?? 1;
-  // 0 -> 1 progress through the current step (used to drive the expanding/contracting circle)
   const stepProgress = stepTotal === 0 ? 1 : (stepTotal - secondsLeft) / stepTotal;
-
-  // Total elapsed across the whole protocol — for the linear progress bar at the top.
   const totalElapsed = protocol.steps.slice(0, stepIndex).reduce((acc, s) => acc + s.seconds, 0) + (stepTotal - secondsLeft);
   const totalProgress = protocol.durationSeconds === 0 ? 1 : Math.min(1, totalElapsed / protocol.durationSeconds);
 
   useEffect(() => {
-    if (!running) return;
+    if (!running || completed) return;
     intervalRef.current = window.setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev > 1) return prev - 1;
-        // Step finished — advance.
-        setStepIndex((idx) => {
-          const nextIdx = idx + 1;
-          if (nextIdx >= protocol.steps.length) {
-            if (!completedRef.current) {
-              completedRef.current = true;
-              window.setTimeout(() => onComplete(), 0);
-            }
-            return idx; // stay on last step, timer will stop next tick
-          }
-          setSecondsLeft(protocol.steps[nextIdx].seconds);
-          return nextIdx;
-        });
-        return 0;
-      });
+      const nextSeconds = secondsLeftRef.current - 1;
+      if (nextSeconds > 0) {
+        secondsLeftRef.current = nextSeconds;
+        setSecondsLeft(nextSeconds);
+        return;
+      }
+      const nextIdx = stepIndexRef.current + 1;
+      if (nextIdx >= protocol.steps.length) {
+        if (!completedRef.current) {
+          completedRef.current = true;
+          setCompleted(true);
+          window.setTimeout(() => onComplete(), 0);
+        }
+        return;
+      }
+      stepIndexRef.current = nextIdx;
+      const nextStepSeconds = protocol.steps[nextIdx].seconds;
+      secondsLeftRef.current = nextStepSeconds;
+      setStepIndex(nextIdx);
+      setSecondsLeft(nextStepSeconds);
     }, 1000);
     return () => {
-      if (intervalRef.current) window.clearInterval(intervalRef.current);
+      if (intervalRef.current !== null) window.clearInterval(intervalRef.current);
     };
-  }, [running, protocol.steps, onComplete]);
+  }, [running, completed, protocol.steps, onComplete]);
 
-  // Stop ticking when finished.
   useEffect(() => {
-    if (completedRef.current && intervalRef.current) {
+    if (completed && intervalRef.current !== null) {
       window.clearInterval(intervalRef.current);
       intervalRef.current = null;
       setRunning(false);
     }
-  }, [stepIndex, secondsLeft]);
+  }, [completed]);
 
-  // Circle scale: inhale 0.6 -> 1.0, exhale 1.0 -> 0.6, hold/rest stays at current pole, neutral pulses gently.
   let scale = 0.8;
   if (phase === "inhale") scale = 0.6 + 0.4 * stepProgress;
   else if (phase === "exhale") scale = 1.0 - 0.4 * stepProgress;
@@ -123,9 +123,7 @@ export function BreathingTimer({ protocol, onComplete, onSkip }: BreathingTimerP
       <div className="w-full">
         <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-500">
           <span>{protocol.title}</span>
-          <span>
-            {Math.max(0, Math.ceil((protocol.durationSeconds - totalElapsed)))}s left
-          </span>
+          <span>{Math.max(0, Math.ceil(protocol.durationSeconds - totalElapsed))}s left</span>
         </div>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
           <div className="h-full bg-brand-600 transition-all duration-300" style={{ width: `${totalProgress * 100}%` }} />
@@ -133,9 +131,7 @@ export function BreathingTimer({ protocol, onComplete, onSkip }: BreathingTimerP
       </div>
 
       <div className="relative flex h-64 w-64 items-center justify-center">
-        {/* Outer guidance ring */}
         <div className="absolute inset-0 rounded-full border-2 border-slate-100" />
-        {/* Phase ring — expands/contracts with breath */}
         <div
           aria-hidden
           className={`absolute inset-0 rounded-full bg-gradient-to-br ${PHASE_COLORS[phase]} opacity-30 transition-transform duration-1000 ease-in-out`}
@@ -161,7 +157,7 @@ export function BreathingTimer({ protocol, onComplete, onSkip }: BreathingTimerP
       </div>
 
       <div className="flex w-full flex-col gap-2 sm:flex-row">
-        {!running && !completedRef.current ? (
+        {!running && !completed ? (
           <button
             type="button"
             onClick={() => setRunning(true)}
@@ -170,7 +166,7 @@ export function BreathingTimer({ protocol, onComplete, onSkip }: BreathingTimerP
             Start breathing
           </button>
         ) : null}
-        {running && !completedRef.current ? (
+        {running && !completed ? (
           <button
             type="button"
             onClick={() => setRunning(false)}

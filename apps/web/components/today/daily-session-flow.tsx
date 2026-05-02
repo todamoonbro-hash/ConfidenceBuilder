@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BreathingTimer, type BreathingProtocol } from "./breathing-timer";
 import { WarmupTimer, type WarmupDrill } from "./warmup-timer";
 import { IdentityVote } from "./identity-vote";
@@ -88,35 +88,48 @@ export function DailySessionFlow({
   const [bodyRunning, setBodyRunning] = useState(false);
   const [repTakeIndex, setRepTakeIndex] = useState(0);
   const [reflectionNote, setReflectionNote] = useState("");
+  const stepRef = useRef<Step>("breath");
+  const bodyStepIndexRef = useRef(0);
+  const bodySecondsLeftRef = useRef(BODY_RELEASE_INSTRUCTIONS[0].seconds);
+  const repTakeIndexRef = useRef(0);
 
   const currentStepIdx = STEP_ORDER.indexOf(step);
 
   const advance = () => {
-    setStep((prev) => {
-      const idx = STEP_ORDER.indexOf(prev);
-      return STEP_ORDER[Math.min(STEP_ORDER.length - 1, idx + 1)] as Step;
-    });
+    const idx = STEP_ORDER.indexOf(stepRef.current);
+    const nextStep = STEP_ORDER[Math.min(STEP_ORDER.length - 1, idx + 1)] as Step;
+    stepRef.current = nextStep;
+    setStep(nextStep);
   };
 
-  const skipTo = (target: Step) => setStep(target);
+  const skipTo = (target: Step) => {
+    stepRef.current = target;
+    setStep(target);
+  };
 
   // Body release simple ticker
   useEffect(() => {
     if (step !== "body" || !bodyRunning) return;
     const interval = window.setInterval(() => {
-      setBodySecondsLeft((s) => {
-        if (s > 1) return s - 1;
-        setBodyStepIndex((idx) => {
-          const nextIdx = idx + 1;
-          if (nextIdx >= BODY_RELEASE_INSTRUCTIONS.length) {
-            window.setTimeout(() => advance(), 0);
-            return idx;
-          }
-          setBodySecondsLeft(BODY_RELEASE_INSTRUCTIONS[nextIdx].seconds);
-          return nextIdx;
-        });
-        return 0;
-      });
+      const nextSeconds = bodySecondsLeftRef.current - 1;
+      if (nextSeconds > 0) {
+        bodySecondsLeftRef.current = nextSeconds;
+        setBodySecondsLeft(nextSeconds);
+        return;
+      }
+
+      const nextIdx = bodyStepIndexRef.current + 1;
+      if (nextIdx >= BODY_RELEASE_INSTRUCTIONS.length) {
+        bodySecondsLeftRef.current = 0;
+        setBodySecondsLeft(0);
+        window.setTimeout(() => advance(), 0);
+        return;
+      }
+
+      bodyStepIndexRef.current = nextIdx;
+      bodySecondsLeftRef.current = BODY_RELEASE_INSTRUCTIONS[nextIdx].seconds;
+      setBodyStepIndex(nextIdx);
+      setBodySecondsLeft(BODY_RELEASE_INSTRUCTIONS[nextIdx].seconds);
     }, 1000);
     return () => window.clearInterval(interval);
   }, [step, bodyRunning]);
@@ -250,7 +263,11 @@ export function DailySessionFlow({
             {repTakeIndex < REP_BEAT_INSTRUCTIONS.length - 1 ? (
               <button
                 type="button"
-                onClick={() => setRepTakeIndex((i) => i + 1)}
+                onClick={() => {
+                  const nextIndex = repTakeIndexRef.current + 1;
+                  repTakeIndexRef.current = nextIndex;
+                  setRepTakeIndex(nextIndex);
+                }}
                 className="flex-1 rounded-lg border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 min-h-12"
               >
                 Next take

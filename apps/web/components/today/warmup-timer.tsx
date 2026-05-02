@@ -2,10 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// Multi-stage vocal warmup walker. Steps the user through the SOVTE block (humming -> lip trills ->
-// straw phonation -> sirens) one at a time, each on its own timer. Voice pedagogy says order
-// matters; the user can pause but not skip ahead, so we don't undermine the protocol.
-
 export type WarmupDrill = {
   id: string;
   title: string;
@@ -22,37 +18,49 @@ type WarmupTimerProps = {
 };
 
 export function WarmupTimer({ drills, onComplete, onSkip }: WarmupTimerProps) {
-  const [drillIndex, setDrillIndex] = useState(0);
   const initialSeconds = drills[0]?.durationSeconds ?? 60;
+  const [drillIndex, setDrillIndex] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(initialSeconds);
   const [running, setRunning] = useState(false);
   const completedRef = useRef(false);
   const intervalRef = useRef<number | null>(null);
+  const drillIndexRef = useRef(0);
+  const secondsLeftRef = useRef(initialSeconds);
 
   const drill = drills[drillIndex];
   const drillDuration = drill?.durationSeconds ?? 60;
   const drillProgress = drillDuration === 0 ? 1 : (drillDuration - secondsLeft) / drillDuration;
+  const drillSignature = drills.map((item) => `${item.id}:${item.durationSeconds ?? 60}`).join("|");
 
   useEffect(() => {
     if (!running) return;
+
     intervalRef.current = window.setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev > 1) return prev - 1;
-        setDrillIndex((idx) => {
-          const nextIdx = idx + 1;
-          if (nextIdx >= drills.length) {
-            if (!completedRef.current) {
-              completedRef.current = true;
-              window.setTimeout(() => onComplete(), 0);
-            }
-            return idx;
-          }
-          setSecondsLeft(drills[nextIdx].durationSeconds ?? 60);
-          return nextIdx;
-        });
-        return 0;
-      });
+      const nextSeconds = secondsLeftRef.current - 1;
+      if (nextSeconds > 0) {
+        secondsLeftRef.current = nextSeconds;
+        setSecondsLeft(nextSeconds);
+        return;
+      }
+
+      const nextIdx = drillIndexRef.current + 1;
+      if (nextIdx >= drills.length) {
+        secondsLeftRef.current = 0;
+        setSecondsLeft(0);
+        if (!completedRef.current) {
+          completedRef.current = true;
+          window.setTimeout(() => onComplete(), 0);
+        }
+        return;
+      }
+
+      const nextDuration = drills[nextIdx].durationSeconds ?? 60;
+      drillIndexRef.current = nextIdx;
+      secondsLeftRef.current = nextDuration;
+      setDrillIndex(nextIdx);
+      setSecondsLeft(nextDuration);
     }, 1000);
+
     return () => {
       if (intervalRef.current) window.clearInterval(intervalRef.current);
     };
@@ -66,6 +74,17 @@ export function WarmupTimer({ drills, onComplete, onSkip }: WarmupTimerProps) {
     }
   }, [drillIndex, secondsLeft]);
 
+  useEffect(() => {
+    if (intervalRef.current) window.clearInterval(intervalRef.current);
+    intervalRef.current = null;
+    completedRef.current = false;
+    drillIndexRef.current = 0;
+    secondsLeftRef.current = drills[0]?.durationSeconds ?? 60;
+    setDrillIndex(0);
+    setSecondsLeft(drills[0]?.durationSeconds ?? 60);
+    setRunning(false);
+  }, [drillSignature, drills]);
+
   if (!drill) {
     return null;
   }
@@ -74,7 +93,9 @@ export function WarmupTimer({ drills, onComplete, onSkip }: WarmupTimerProps) {
     <div className="flex flex-col gap-6 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
       <div>
         <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-500">
-          <span>Vocal warmup ({drillIndex + 1} of {drills.length})</span>
+          <span>
+            Vocal warmup ({drillIndex + 1} of {drills.length})
+          </span>
           <span>{secondsLeft}s</span>
         </div>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
@@ -84,9 +105,7 @@ export function WarmupTimer({ drills, onComplete, onSkip }: WarmupTimerProps) {
 
       <div>
         <h3 className="text-lg font-semibold text-slate-900">{drill.title}</h3>
-        {drill.targetFocus ? (
-          <p className="mt-1 text-xs uppercase tracking-wider text-brand-600">{drill.targetFocus}</p>
-        ) : null}
+        {drill.targetFocus ? <p className="mt-1 text-xs uppercase tracking-wider text-brand-600">{drill.targetFocus}</p> : null}
         <p className="mt-3 text-sm text-slate-700">{drill.instruction}</p>
         {drill.examplePhrase ? (
           <p className="mt-3 rounded-lg bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800">
@@ -126,7 +145,7 @@ export function WarmupTimer({ drills, onComplete, onSkip }: WarmupTimerProps) {
       </div>
 
       <p className="text-xs text-slate-500">
-        Order matters — humming first, then lip trills, then straw, then sirens. Skipping ahead reduces the benefit.
+        Order matters: humming first, then lip trills, then straw, then sirens. Skipping ahead reduces the benefit.
       </p>
     </div>
   );
